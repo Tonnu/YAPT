@@ -41,7 +41,6 @@ public class Session extends Node<IYAPTServer> implements ISession {
     public Session(IYAPTServer server) throws RemoteException {
         this.pongGameNumber++;
         this.server = server;
-        //We will register this session with the server and notify it we're looking for someone to play with.
         lookingForGame = false;
         game = new YAPT.GAME.GameClient(this);
     }
@@ -138,6 +137,7 @@ public class Session extends Node<IYAPTServer> implements ISession {
                 break;
             case "pushLookingForGame":
                 System.out.println("in session pushLookingForGame!!!!");
+                gameInterrupted = false;
                 if (!lookingForGame) {
                     lookingForGame = true;
                     System.out.println("Sending LFG request!!!!");

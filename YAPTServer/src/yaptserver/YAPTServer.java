@@ -133,11 +133,11 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
                                         (game.getPlayerB() != null && game.getPlayerA() != null)) {
                                     game.stop();
                                     //send disconnect to other player
-                                    b.onMessage("serverDisconnect", null);
-                                    this.unRegister(b);
+                                    game.getPlayerB().onMessage("serverDisconnect", null);
+                                    this.unRegister(game.getPlayerB());
 
-                                    a.onMessage("serverDisconnect", null);
-                                    this.unRegister(a);
+                                    game.getPlayerA().onMessage("serverDisconnect", null);
+                                    this.unRegister(game.getPlayerA());
 
                                     games.remove(game);
                                     activeGames--;
