@@ -5,11 +5,14 @@
  */
 package yaptserver;
 
+import java.io.EOFException;
+import java.rmi.ConnectException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -38,7 +41,7 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
     public YAPTServer() throws RemoteException {
         //pong = new Pong(this);
         //pong.register(this);
-        this.games = new ArrayList<>();
+        this.games = Collections.synchronizedList(new ArrayList<PongGame>());
         executor = Executors.newFixedThreadPool(50);//50 threads
     }
 
@@ -56,11 +59,44 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
                 case "pushSessionUpdate":
                     ISession _temp = (ISession) o;
                     //recieved session update from one of the clients, notify the other
-                    this.notifyAll("getSessionUpdate", _temp);
+                    //this.notifyAll("getSessionUpdate", _temp);
                     //if there's a session update, find the correct game belonging to the session and update it
-                    for (PongGame game : games) {
-                        if (game.getGameNumber() == (_temp.getGamePongNumber())) {
-                            game.getSessionUpdate(_temp);
+                    try {
+                        for (PongGame game : games) {
+                            if (game.getGameNumber() == _temp.getGamePongNumber()) {
+                                //got update from player 1, send update to player 2
+                                if (_temp.getPlayerNumber() == 1) {
+                                    game.getPlayerB().onMessage("getSessionUpdate", _temp);
+                                } else {
+                                    //got update from p2, send to p1
+                                    game.getPlayerA().onMessage("getSessionUpdate", _temp);
+                                }
+                            }
+
+                            //now update the ponggame itself
+                            if (game.getGameNumber() == (_temp.getGamePongNumber())) {
+                                game.getSessionUpdate(_temp);
+                            }
+                        }
+                    } catch (Exception ex) {
+                        for (PongGame game : games) {
+                            if (game.getGameNumber() == _temp.getGamePongNumber()) {
+                                //found the correct game
+                                //
+                                if (game.getPlayerB() != null && game.getPlayerA() != null) {
+                                    game.stop();
+                                    //send disconnect to other player
+                                    game.getPlayerB().onMessage("serverDisconnect", null);
+                                    this.unRegister(game.getPlayerB());
+
+                                    game.getPlayerA().onMessage("serverDisconnect", null);
+                                    this.unRegister(game.getPlayerA());
+
+                                    games.remove(game);
+                                    activeGames--;
+                                    break;
+                                }
+                            }
                         }
                     }
                     break;
@@ -126,12 +162,12 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
                         //disconnected while in game
                         //disconnect other player as well for now
                         //find the correct game first
-
                         for (PongGame game : games) {
                             if (game.getGameNumber() == _temp.getGamePongNumber()) {
-                                if ((_temp.equals(game.getPlayerB()) || _temp.equals(game.getPlayerB())) && 
-                                        (game.getPlayerB() != null && game.getPlayerA() != null)) {
-                                    game.stop();
+                                //found the correct game
+                                //
+                                game.stop();
+                                if (game.getPlayerB() != null && game.getPlayerA() != null) {
                                     //send disconnect to other player
                                     game.getPlayerB().onMessage("serverDisconnect", null);
                                     this.unRegister(game.getPlayerB());

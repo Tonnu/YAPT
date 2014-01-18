@@ -6,6 +6,7 @@
 package yapt.GUI;
 
 import java.awt.Graphics;
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -96,6 +97,8 @@ public class YAPTPanel extends javax.swing.JPanel {
         } else if (hasGameStarted() && hasGameStopped()) {
             //game was started but interrupted
             gameloop.interrupt();
+        }else if(!hasGameStarted() && hasGameStopped()){
+            button1.setLabel("Find game!");
         }
     }
 
@@ -116,6 +119,7 @@ public class YAPTPanel extends javax.swing.JPanel {
         }
         return false;
     }
+    
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -166,12 +170,13 @@ public class YAPTPanel extends javax.swing.JPanel {
     }//GEN-LAST:event_formMouseClicked
 
     private void button1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_button1ActionPerformed
-
-        if (!isLookingForGame()) {
+        //if we're not looking for a game and button is pressed, start looking for game
+        if (!isLookingForGame() && (sessionImpl == null || sessionImpl.gameStarted == false)) {
             //unwise
             System.setSecurityManager(null);
             //String serverAddress = (GameFrame.ARGS.length < 1) ? "localhost" : GameFrame.ARGS[0];
             String serverAddress = "localhost";
+           //when trying to find a game, try to connect to server first
             try {
 
                 //register clientStub at remote server
@@ -186,8 +191,18 @@ public class YAPTPanel extends javax.swing.JPanel {
 
                 //start pushing messages to the server
                 server.onMessage("Connected");
+                
+                
+                sessionImpl.onMessage("pushLookingForGame", null);
+                button1.setLabel("Disconnect...");
 
-            } catch (Throwable t) {
+                this.setFocusable(true);
+                this.requestFocusInWindow();
+
+                gameloop = new Thread(r);
+                gameloop.start();
+
+            } catch (NotBoundException | RemoteException t) {
                 Logger.getLogger(IYAPTServer.class.getName()).log(
                         Level.SEVERE,
                         "An error ocurred. Ensure that no RMI server is running, then run this class as follows:\n"
@@ -198,26 +213,16 @@ public class YAPTPanel extends javax.swing.JPanel {
                 );
                 System.exit(1);
             }
+            //if we are looking for game and button is pressed, we should disconnect from the server
+        } else if ((isLookingForGame() || sessionImpl.gameStarted)){
             try {
-                sessionImpl.onMessage("pushLookingForGame", null);
-                button1.setLabel("Disconnect...");
-
-                this.setFocusable(true);
-                this.requestFocusInWindow();
-
-                gameloop = new Thread(r);
-                gameloop.start();
-            } catch (RemoteException ex) {
-                Logger.getLogger(YAPTPanel.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        } else if(sessionImpl.gameInterrupted){
-            try {
+                gameloop.interrupt();
                 sessionImpl.onMessage("pushDisconnect", null);
                 button1.setLabel("Find Game!");
-
             } catch (RemoteException ex) {
                 Logger.getLogger(YAPTPanel.class.getName()).log(Level.SEVERE, null, ex);
             }
+        } else {
         }
 
     }//GEN-LAST:event_button1ActionPerformed

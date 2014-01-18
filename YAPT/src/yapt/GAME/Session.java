@@ -109,26 +109,30 @@ public class Session extends Node<IYAPTServer> implements ISession {
                 //System.out.println("pongupdate: X=" + this.game.pong.getX() + "y=" + this.pong.getY());
                 break;
             case "pushBatUpdate":
-                //my bat moved, notify server
-                System.out.println("pushing batupdate to server");
-                //server.onMessage(message, this.game.getPlayer().getBat());
-                server.onMessage("pushSessionUpdate", this); //push new sessionstate to server
+                if (!gameInterrupted) {
+                    //my bat moved, notify server
+                    System.out.println("pushing batupdate to server");
+                    //server.onMessage(message, this.game.getPlayer().getBat());
+                    server.onMessage("pushSessionUpdate", this); //push new sessionstate to server
+                }
                 break;
             case "getSessionUpdate":
                 //opponent's session updated
                 //set opponent's bat for drawing purposes
                 System.out.println("recieved opponent sessionupdate from server");
-                ISession _opponent = (ISession) o;
-                //verify the opponent is in the same game as we are, and he also has the other player number
-                if (_opponent.getPlayerNumber() != this.getPlayerNumber() && this.pongGameNumber == _opponent.getGamePongNumber()) {
+                if (!gameInterrupted) {
+                    ISession _opponent = (ISession) o;
+                    //verify the opponent is in the same game as we are, and he also has the other player number
+                    if (_opponent.getPlayerNumber() != this.getPlayerNumber() && this.pongGameNumber == _opponent.getGamePongNumber()) {
                     //TODO 
-                    //not needed to send the whole bat object, let alone player. Only needed for drawing so send coordinates only.
-                    if (this.game.getOpponent() == null) {
-                        System.out.println("this.game.getOpponent() equals null");
-                        this.game.getOpponent().setBatCoordinates(new Vector2f(0, 0)); //needed for drawing 
-                    } else {
-                        System.out.println("Opponent does not equal null");
-                        this.game.getOpponent().setBatCoordinates(_opponent.getPlayerPosition()); //needed for drawing 
+                        //not needed to send the whole bat object, let alone player. Only needed for drawing so send coordinates only.
+                        if (this.game.getOpponent() == null) {
+                            System.out.println("this.game.getOpponent() equals null");
+//                            this.game.getOpponent().setBatCoordinates(new Vector2f(0, 0)); //needed for drawing 
+                        } else {
+                            System.out.println("Opponent does not equal null");
+                            this.game.getOpponent().setBatCoordinates(_opponent.getPlayerPosition()); //needed for drawing 
+                        }
                     }
                 }
                 break;
