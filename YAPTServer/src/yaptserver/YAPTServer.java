@@ -5,8 +5,6 @@
  */
 package yaptserver;
 
-import java.io.EOFException;
-import java.rmi.ConnectException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -16,12 +14,15 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import yapt.RMI.IPong;
 import yapt.RMI.ISession;
 import yapt.RMI.IYAPTServer;
 import yapt.RMI.Node;
+import yapt.RMI.Vector2f;
 
 /**
  *
@@ -35,10 +36,11 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
     private List<PongGame> games;
     private List<ISession> playersInQue;
     private ExecutorService executor;
+    private final Lock lock = new ReentrantLock();
+
     /*TODO:
      IMPLEMENT THREADPOOL
      */
-
     public YAPTServer() throws RemoteException {
         //pong = new Pong(this);
         //pong.register(this);
@@ -49,17 +51,21 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
 
     @Override
     public void register(ISession other) throws RemoteException {
-        super.register(other); //To change body of generated methods, choose Tools | Templates.
+        super.register(other);
         other.register(this);
     }
 
     @Override
-    public void onMessage(String message, Object o) throws RemoteException {
+    public void onMessage(String message, Object o) {
         try {
-            super.onMessage(message); //To change body of generated methods, choose Tools | Templates.
+            super.onMessage(message);
             switch (message) {
                 case "pushSessionUpdate":
+                    this.lock.tryLock();
+
                     ISession _temp = (ISession) o;
+                    this.lock.unlock();
+
                     //recieved session update from one of the clients, notify the other
                     //this.notifyAll("getSessionUpdate", _temp);
                     //if there's a session update, find the correct game belonging to the session and update it
@@ -68,10 +74,10 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
                             if (game.getGameNumber() == _temp.getGamePongNumber()) {
                                 //got update from player 1, send update to player 2
                                 if (_temp.getPlayerNumber() == 1) {
-                                    game.getPlayerB().onMessage("getSessionUpdate", _temp);
+                                    game.getPlayerB().onMessage("getSessionUpdate", (Vector2f) _temp.getPlayerPosition());
                                 } else {
                                     //got update from p2, send to p1
-                                    game.getPlayerA().onMessage("getSessionUpdate", _temp);
+                                    game.getPlayerA().onMessage("getSessionUpdate", (Vector2f) _temp.getPlayerPosition());
                                 }
                             }
 
@@ -80,39 +86,42 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
                                 game.getSessionUpdate(_temp);
                             }
                         }
-                    } catch (Exception ex) {
-                        for (PongGame game : games) {
-                            if (game.getGameNumber() == _temp.getGamePongNumber()) {
-                                //found the correct game
-                                //
-                                if (game.getPlayerB() != null && game.getPlayerA() != null) {
-                                    game.stop();
-                                    //send disconnect to other player
-                                    game.getPlayerB().onMessage("serverDisconnect", null);
-                                    this.unRegister(game.getPlayerB());
-
-                                    game.getPlayerA().onMessage("serverDisconnect", null);
-                                    this.unRegister(game.getPlayerA());
-
-                                    games.remove(game);
-                                    activeGames--;
-                                    break;
-                                }
-                            }
-                        }
+                    } catch (RemoteException ex) {
+                        ex.printStackTrace();
+//                        for (PongGame game : games) {
+//                            if (game.getGameNumber() == _temp.getGamePongNumber()) {
+//                                //found the correct game
+//                                //
+//                                if (game.getPlayerB() != null && game.getPlayerA() != null) {
+//                                    game.stop();
+//                                    //send disconnect to other player
+//                                    game.getPlayerB().onMessage("serverDisconnect", null);
+//                                    this.unRegister(game.getPlayerB());
+//
+//                                    game.getPlayerA().onMessage("serverDisconnect", null);
+//                                    this.unRegister(game.getPlayerA());
+//
+//                                    games.remove(game);
+////                                    activeGames--;
+//                                    break;
+//                                }
+//                            }
+//                        }
                     }
                     break;
                 case "pongUpdate":
                     //update correct clients with new pong coordinates
                     PongGame _tempGame = (PongGame) o;
+                    _tempGame.getPlayerA().onMessage(message, (IPong) _tempGame.getPong());
+                    _tempGame.getPlayerB().onMessage(message, (IPong) _tempGame.getPong());
                     //find the correct game first
-                    for (PongGame game : games) {
-                        if (_tempGame.equals(game)) {
-                            game.getPlayerA().onMessage(message, (IPong) game.getPong());
-                            game.getPlayerB().onMessage(message, (IPong) game.getPong());
-                            break;
-                        }
-                    }
+//                    for (PongGame game : games) {
+//                        if (_tempGame.equals(game)) {
+//                            game.getPlayerA().onMessage(message, (IPong) game.getPong());
+//                            game.getPlayerB().onMessage(message, (IPong) game.getPong());
+//                            break;
+//                        }
+//                    }
                     break;
                 case "newLookingForGame":
                     //first check if there is someone else in que for a game
@@ -202,7 +211,6 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
 //                    notifyAll("getPongGameNumber", (int) o);
 //                    break;
                 case "disc":
-                    System.out.println("Someone disconnected!");
                     _temp = (ISession) o;
 
                     //find out who disconnected
@@ -222,6 +230,7 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
 
                     //if player wasn't in que he was in a game, find that game
                     for (PongGame game : games) {
+                        System.out.println("A player disconnected from the game!");
                         try {
                             //verify that he was in fact in a game(number !=0)
                             if (game.getGameNumber() == _temp.getGamePongNumber() && _temp.getGamePongNumber() != 0) {
@@ -236,7 +245,7 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
                                     this.unRegister(game.getPlayerA());
 
                                     games.remove(game);
-                                    activeGames--;
+//                                    activeGames--;
                                     break;
                                 }
                             }

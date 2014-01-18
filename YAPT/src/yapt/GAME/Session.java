@@ -121,19 +121,20 @@ public class Session extends Node<IYAPTServer> implements ISession {
                 //set opponent's bat for drawing purposes
                 System.out.println("recieved opponent sessionupdate from server");
                 if (!gameInterrupted) {
-                    ISession _opponent = (ISession) o;
+                    //ISession _opponent = (ISession) o;
+                    Vector2f _opponentPosition = (Vector2f) o;
                     //verify the opponent is in the same game as we are, and he also has the other player number
-                    if (_opponent.getPlayerNumber() != this.getPlayerNumber() && this.pongGameNumber == _opponent.getGamePongNumber()) {
-                    //TODO 
+                    //if (_opponent.getPlayerNumber() != this.getPlayerNumber() && this.pongGameNumber == _opponent.getGamePongNumber()) {
+                        //TODO 
                         //not needed to send the whole bat object, let alone player. Only needed for drawing so send coordinates only.
-                        if (this.game.getOpponent() == null) {
-                            System.out.println("this.game.getOpponent() equals null");
+                       // if (this.game.getOpponent() == null) {
+                         //   System.out.println("this.game.getOpponent() equals null");
 //                            this.game.getOpponent().setBatCoordinates(new Vector2f(0, 0)); //needed for drawing 
-                        } else {
-                            System.out.println("Opponent does not equal null");
-                            this.game.getOpponent().setBatCoordinates(_opponent.getPlayerPosition()); //needed for drawing 
-                        }
-                    }
+                       // } else {
+                      //      System.out.println("Opponent does not equal null");
+                            this.game.getOpponent().setBatCoordinates(_opponentPosition); //needed for drawing 
+                        //}
+                    //}
                 }
                 break;
             case "getPongGameNumber":
