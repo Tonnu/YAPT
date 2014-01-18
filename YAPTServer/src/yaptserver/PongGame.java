@@ -25,7 +25,7 @@ public class PongGame implements IPongGame {
     private final int game_id;
     private Timer t;
     private int leftScore, rightScore = 0;
-    
+
     TimerTask tt = new TimerTask() {
 
         @Override
@@ -47,7 +47,7 @@ public class PongGame implements IPongGame {
      */
     public PongGame(IYAPTServer server, ISession A, ISession B, int game_id) throws RemoteException {
         this.game_id = game_id;
-        server.onMessage("pushPongGameNumber", this.game_id);
+        //server.onMessage("pushPongGameNumber", this.game_id);
         this.game_started = false;
         this.server = (YAPTServer) server;
         this.left = A;
@@ -87,31 +87,30 @@ public class PongGame implements IPongGame {
             leftScore++;
             stop();
         } else {
-            server.onMessage("pongUpdate", (IPong) this.pong);
+            server.onMessage("pongUpdate", (IPongGame) this);
         }
-        
-        if(leftScore == 5){
+
+        if (leftScore == 5) {
             server.onMessage("someoneWon", 1);
             stop();
-        }else if(rightScore == 5){
+        } else if (rightScore == 5) {
             server.onMessage("someoneWon", 2);
             stop();
         }
     }
 
-    public int[] getPlayerScores(){
-        return new int[]{leftScore,rightScore};
+    public int[] getPlayerScores() {
+        return new int[]{leftScore, rightScore};
     }
-    
-    
-    public ISession getPlayerA(){
+
+    public ISession getPlayerA() {
         return left;
     }
-    
-    public ISession getPlayerB(){
+
+    public ISession getPlayerB() {
         return right;
     }
-    
+
     public void getSessionUpdate(ISession _temp) {
         try {
             if (_temp.getPlayerNumber() == this.left.getPlayerNumber()) {
@@ -126,10 +125,12 @@ public class PongGame implements IPongGame {
         }
     }
 
+    @Override
     public int getGameNumber() {
         return this.game_id;
     }
 
+    @Override
     public IPong getPong() {
         return this.pong;
     }

@@ -85,19 +85,15 @@ public class YAPTPanel extends javax.swing.JPanel {
     public void update() {
         if (hasGameStarted()) {
             if (keyListener.isUp()) {
-                System.out.println("Key is up!!!");
-
                 sessionImpl.update(-1);
             } else if (keyListener.isDown()) {
                 sessionImpl.update(1);
-                System.out.println("Key is down!!!");
             } else {
                 sessionImpl.update(0);
             }
-        } else if (hasGameStarted() && hasGameStopped()) {
-            //game was started but interrupted
+        } else if (!hasGameStarted() && hasGameStopped()) {
+            //game was started but interrupted (so hasGameStarted() is false)
             gameloop.interrupt();
-        }else if(!hasGameStarted() && hasGameStopped()){
             button1.setLabel("Find game!");
         }
     }
@@ -119,7 +115,6 @@ public class YAPTPanel extends javax.swing.JPanel {
         }
         return false;
     }
-    
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -171,14 +166,13 @@ public class YAPTPanel extends javax.swing.JPanel {
 
     private void button1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_button1ActionPerformed
         //if we're not looking for a game and button is pressed, start looking for game
-        if (!isLookingForGame() && (sessionImpl == null || sessionImpl.gameStarted == false)) {
+        if (!isLookingForGame() && (sessionImpl == null || !hasGameStarted())) {
             //unwise
             System.setSecurityManager(null);
             //String serverAddress = (GameFrame.ARGS.length < 1) ? "localhost" : GameFrame.ARGS[0];
             String serverAddress = "localhost";
-           //when trying to find a game, try to connect to server first
+            //when trying to find a game, try to connect to server first
             try {
-
                 //register clientStub at remote server
                 Registry remoteRegistry = LocateRegistry.getRegistry(serverAddress, RMI_PORT);
                 server = (IYAPTServer) remoteRegistry.lookup(IYAPTServer.class.getSimpleName());
@@ -191,8 +185,7 @@ public class YAPTPanel extends javax.swing.JPanel {
 
                 //start pushing messages to the server
                 server.onMessage("Connected");
-                
-                
+
                 sessionImpl.onMessage("pushLookingForGame", null);
                 button1.setLabel("Disconnect...");
 
@@ -214,7 +207,8 @@ public class YAPTPanel extends javax.swing.JPanel {
                 System.exit(1);
             }
             //if we are looking for game and button is pressed, we should disconnect from the server
-        } else if ((isLookingForGame() || sessionImpl.gameStarted)){
+            //OR if we're playing a game (gameStarted == true) and we pushed the button, we should also disc
+        } else if ((isLookingForGame() || hasGameStarted())) {
             try {
                 gameloop.interrupt();
                 sessionImpl.onMessage("pushDisconnect", null);
