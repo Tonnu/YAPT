@@ -198,10 +198,14 @@ public class YAPTPanel extends javax.swing.JPanel {
                 //if we are looking for game and button is pressed, we should disconnect from the server
                 //OR if we're playing a game (gameStarted == true) and we pushed the button, we should also disc
             } else if (hasGameStarted()) {
+                System.out.println("Leaving game!");
                 gameloop.interrupt();
                 sessionImpl.onMessage("pushDisconnect", null);
 
+                button1.setLabel("Find Game!");
+
             } else if (isLookingForGame()) {
+                System.out.println("Leaving que!");
                 gameloop.interrupt();
                 sessionImpl.onMessage("leaveQue", null);
 

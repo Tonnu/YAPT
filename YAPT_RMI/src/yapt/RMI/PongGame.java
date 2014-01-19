@@ -21,10 +21,10 @@ public class PongGame extends Node<ISession> implements IPongGame, Serializable 
     private final IYAPTServer server;
     private IPong pong;
     private ISession playerA, playerB;
-    private boolean game_started;
+    private boolean game_started, game_stopped;
     private final int game_id;
     private int leftScore, rightScore = 0;
-    private Timer t;
+
     /**
      * *
      * Manages a game between two people. Specifically, it holds the pong
@@ -55,7 +55,9 @@ public class PongGame extends Node<ISession> implements IPongGame, Serializable 
     }
 
     public void start() {
-        t = new Timer();
+        this.game_stopped = false;
+        this.game_started = true;
+        Timer t = new Timer();
         t.schedule(new TimerTask() {
 
             @Override
@@ -68,48 +70,53 @@ public class PongGame extends Node<ISession> implements IPongGame, Serializable 
 
     @Override
     public void onMessage(String message, Object o) {
-        try {
-            super.onMessage(message);
+        if (true) {
+            try {
+                super.onMessage(message);
 
-            switch (message) {
-                case "pushSessionUpdate":
-                    ISession _temp = (ISession) o;
+                switch (message) {
+                    case "pushSessionUpdate":
+                        ISession _temp = (ISession) o;
 
-                    if (_temp.getPlayerNumber() == 1) {
-                        //update player A
-                        this.playerA = _temp;
-                        //got update from player A, notify player B
-                        this.playerB.onMessage("getSessionUpdate", _temp.getPlayerPosition());
-                    } else {
-                        //update player B
-                        this.playerB = _temp;
-                        //got update from player B, notify player A
-                        this.playerA.onMessage("getSessionUpdate", _temp.getPlayerPosition());
-                    }
-                    break;
-                case "gameDisconnect":
-                    this.stop();
-                    if (this.getPlayerB() != null && this.getPlayerA() != null) {
-                        //send disconnect to other player
-                        this.getPlayerB().onMessage("serverDisconnect", null);
-                        //this.unRegister(this.getPlayerB());
-
-                        this.getPlayerA().onMessage("serverDisconnect", null);
-                        //this.unRegister(this.getPlayerA());
-
-                        server.onMessage("gameStopped", this);
+                        if (_temp.getPlayerNumber() == 1) {
+                            //update player A
+                            this.playerA = _temp;
+                            //got update from player A, notify player B
+                            this.playerB.onMessage("getSessionUpdate", _temp.getPlayerPosition());
+                        } else {
+                            //update player B
+                            this.playerB = _temp;
+                            //got update from player B, notify player A
+                            this.playerA.onMessage("getSessionUpdate", _temp.getPlayerPosition());
+                        }
                         break;
-                    }
+                    case "gameDisconnect":
+                        //this.stop();
+                        if (this.getPlayerB() != null && this.getPlayerA() != null) {
+                            //send disconnect to other player
+                            this.getPlayerB().onMessage("serverDisconnect", null);
+                            //this.unRegister(this.getPlayerB());
 
+                            this.getPlayerA().onMessage("serverDisconnect", null);
+                            //this.unRegister(this.getPlayerA());
+
+                            //server.onMessage("gameStopped", this);
+                            break;
+                        }
+                }
+            } catch (RemoteException ex) {
+                Logger.getLogger(PongGame.class.getName()).log(Level.SEVERE, null, ex);
             }
-        } catch (RemoteException ex) {
-            Logger.getLogger(PongGame.class.getName()).log(Level.SEVERE, null, ex);
         }
 
     }
 
     public void stop() {
-        t.cancel();
+      
+            this.game_stopped = true;
+            this.game_started = true;
+            //this.server.onMessage("gameStopped", this);
+       
     }
 
     private void update() {
@@ -129,7 +136,7 @@ public class PongGame extends Node<ISession> implements IPongGame, Serializable 
                 leftScore++;
                 stop();
             } else {
-                notifyAll("pongUpdate", (IPongGame) this);
+                notifyAll("pongUpdate", this.pong.getPongCoordinates());
             }
 
             if (leftScore == 5) {

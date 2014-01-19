@@ -59,73 +59,6 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
         try {
             super.onMessage(message);
             switch (message) {
-                /*
-                 case "pushSessionUpdate":
-                 //this lock needs more testing
-                 this.lock.tryLock();
-                 ISession _temp = (ISession) o;
-                 this.lock.unlock();
-
-                 //recieved session update from one of the clients, notify the other
-                 //this.notifyAll("getSessionUpdate", _temp);
-                 //if there's a session update, find the correct game belonging to the session and update it
-                 try {
-                 for (PongGame game : games) {
-                 if (game.getGameNumber() == _temp.getGamePongNumber()) {
-                 //got update from player 1, send update to player 2
-                 if (_temp.getPlayerNumber() == 1) {
-                 game.getPlayerB().onMessage("getSessionUpdate", (Vector2f) _temp.getPlayerPosition());
-                 } else {
-                 //got update from p2, send to p1
-                 game.getPlayerA().onMessage("getSessionUpdate", (Vector2f) _temp.getPlayerPosition());
-                 }
-                 }
-
-                 //now update the ponggame itself
-                 if (game.getGameNumber() == (_temp.getGamePongNumber())) {
-                 game.getSessionUpdate(_temp);
-                 }
-                 }
-                 } catch (RemoteException ex) {
-                 ex.printStackTrace();
-                 //                        for (PongGame game : games) {
-                 //                            if (game.getGameNumber() == _temp.getGamePongNumber()) {
-                 //                                //found the correct game
-                 //                                //
-                 //                                if (game.getPlayerB() != null && game.getPlayerA() != null) {
-                 //                                    game.stop();
-                 //                                    //send disconnect to other player
-                 //                                    game.getPlayerB().onMessage("serverDisconnect", null);
-                 //                                    this.unRegister(game.getPlayerB());
-                 //
-                 //                                    game.getPlayerA().onMessage("serverDisconnect", null);
-                 //                                    this.unRegister(game.getPlayerA());
-                 //
-                 //                                    games.remove(game);
-                 ////                                    activeGames--;
-                 //                                    break;
-                 //                                }
-                 //                            }
-                 //                        }
-                 }
-                 break;
-                 */
-                /*
-                 case "pongUpdate":
-                 //update correct clients with new pong coordinates
-                 IPongGame _tempGame = (IPongGame) o;
-                 _tempGame.getPlayerA().onMessage(message, (Vector2f) _tempGame.getPong().getPongCoordinates());
-                 _tempGame.getPlayerB().onMessage(message, (Vector2f) _tempGame.getPong().getPongCoordinates());
-                 //find the correct game first
-                 //                    for (PongGame game : games) {
-                 //                        if (_tempGame.equals(game)) {
-                 //                            game.getPlayerA().onMessage(message, (IPong) game.getPong());
-                 //                            game.getPlayerB().onMessage(message, (IPong) game.getPong());
-                 //                            break;
-                 //                        }
-                 //                    }
-                 break;
-                 */
                 case "newLookingForGame":
                     //first check if there is someone else in que for a game
                     if (playersInQue.isEmpty()) {
@@ -142,9 +75,6 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
                         playersInQue.remove(_tempB);
 
                         final PongGame game = new PongGame(this, _tempA, _tempB, activeGames);
-//                        _tempA.onMessage("getPongGameNumber", activeGames);
-//                        _tempB.onMessage("getPongGameNumber", activeGames);
-
                         _tempA.onMessage("getPongGameInstance", (IPongGame) game);
                         _tempB.onMessage("getPongGameInstance", (IPongGame) game);
                         
@@ -176,52 +106,6 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
 
                     }
                     break;
-
-//                    if (a == null) {
-//                        this.a = (ISession) o;
-//                        //this.a.setPlayerNumber(1);
-//                        //this.a.setGamePongNumber(activeGames);
-//                        System.out.println("Player 1 has joined the que!");
-//                        break;
-//                        //if it's the second player looking for game, start a pongame with player a and b
-//                    } else if (a != null && b == null) {
-//                        this.activeGames++;
-//                        this.b = (ISession) o;
-//
-//                        this.a.onMessage("getPongGameNumber", activeGames);
-//                        this.b.onMessage("getPongGameNumber", activeGames);
-//
-//                        this.a.onMessage("getPlayerNumber", 1);
-//                        this.b.onMessage("getPlayerNumber", 2);
-//
-//                        //we have to notify the second player first he has found a game
-//                        //because player 1 has already made gameclient and a player + bat object
-//                        //if you would first notify player a that player b has joined and pass the session b object to session a,
-//                        //the game would start immediately, before player b has even made a player + bat object
-//                        this.b.onMessage("gameFound", a);
-//                        this.a.onMessage("gameFound", b);
-//                        final PongGame game = new PongGame(this, a, b, activeGames);
-//                        this.a = null;
-//                        this.b = null;
-//                        Runnable newGame = new Runnable() {
-//                            @Override
-//                            public void run() {
-//                                game.start();
-//                            }
-//                        };
-//
-//                        games.add(game);
-//                        executor.execute(newGame);
-//
-//                        System.out.println("Player 2 has joined the que and the game has started!");
-//                    } else {
-//                        notifyAll("Looking for game error!", null);
-//                    }
-//                    break;
-//                case "pushPongGameNumber":
-//                    
-//                    notifyAll("getPongGameNumber", (int) o);
-//                    break;
                 case "leftQue":
                     //find out who disconnected
                     ISession _temp = (ISession) o;
@@ -243,81 +127,6 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
                     IPongGame _game = (IPongGame) o;
                     games.remove((PongGame) _game);
                     break;
-                /*
-                 case "disc":
-                 _temp = (ISession) o;
-
-                 //find out who disconnected
-                 for (ISession _player : playersInQue) {
-                 if (_player.equals(_temp)) {
-                 //if he was in que, remove him from it
-                 try {
-                 playersInQue.remove(_player);
-                 System.out.println("A player has left the que!");
-                 break;
-                 } catch (Exception ex) {
-                 playersInQue.remove(_player);
-                 break;
-                 }
-                 }
-                 }
-
-                 //if player wasn't in que he was in a game, find that game
-                 for (PongGame game : games) {
-                 System.out.println("A player disconnected from the game!");
-                 try {
-                 //verify that he was in fact in a game(number !=0)
-                 if (game.getGameNumber() == _temp.getGamePongNumber() && _temp.getGamePongNumber() != 0) {
-                 //found the correct game
-                 game.stop();
-                 if (game.getPlayerB() != null && game.getPlayerA() != null) {
-                 //send disconnect to other player
-                 game.getPlayerB().onMessage("serverDisconnect", null);
-                 this.unRegister(game.getPlayerB());
-
-                 game.getPlayerA().onMessage("serverDisconnect", null);
-                 this.unRegister(game.getPlayerA());
-
-                 games.remove(game);
-                 //                                    activeGames--;
-                 break;
-                 }
-                 }
-                 } catch (RemoteException ex) {
-                 Logger.getLogger(YAPTServer.class.getName()).log(Level.SEVERE, null, ex);
-                 }
-
-                 }
-
-                 //                    if (_temp.equals(a) && b == null) {
-                 //                        //disconnect happend while LFG
-                 //                        this.a = null;
-                 //                        this.unRegister(_temp);
-                 //                    } else {
-                 //                        //disconnected while in game
-                 //                        //disconnect other player as well for now
-                 //                        //find the correct game first
-                 //                        for (PongGame game : games) {
-                 //                            if (game.getGameNumber() == _temp.getGamePongNumber()) {
-                 //                                //found the correct game
-                 //                                game.stop();
-                 //                                if (game.getPlayerB() != null && game.getPlayerA() != null) {
-                 //                                    //send disconnect to other player
-                 //                                    game.getPlayerB().onMessage("serverDisconnect", null);
-                 //                                    this.unRegister(game.getPlayerB());
-                 //
-                 //                                    game.getPlayerA().onMessage("serverDisconnect", null);
-                 //                                    this.unRegister(game.getPlayerA());
-                 //
-                 //                                    games.remove(game);
-                 //                                    activeGames--;
-                 //                                    break;
-                 //                                }
-                 //                            }
-                 //                        }
-                 //}
-                 break;
-                 */
                 case "someoneWon":
                 //end the game;
                 default:
