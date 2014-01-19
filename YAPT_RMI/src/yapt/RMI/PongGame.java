@@ -79,12 +79,12 @@ public class PongGame extends Node<ISession> implements IPongGame, Serializable 
                         //update player A
                         this.playerA = _temp;
                         //got update from player A, notify player B
-                        this.playerA.onMessage("getSessionUpdate", _temp.getPlayerPosition());
+                        this.playerB.onMessage("getSessionUpdate", _temp.getPlayerPosition());
                     } else {
                         //update player B
                         this.playerB = _temp;
                         //got update from player B, notify player A
-                        this.playerB.onMessage("getSessionUpdate", _temp.getPlayerPosition());
+                        this.playerA.onMessage("getSessionUpdate", _temp.getPlayerPosition());
                     }
                     break;
                 case "gameDisconnect":
