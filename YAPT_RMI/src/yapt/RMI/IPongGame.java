@@ -18,5 +18,7 @@ public interface IPongGame extends INode<ISession> {
     public ISession getPlayerA();
 
     public ISession getPlayerB();
+    
+    public void start();
 
 }

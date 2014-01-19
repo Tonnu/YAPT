@@ -67,8 +67,8 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
                     } else {
                         //there is someone else in que, match the first one in que up with this new player
                         this.activeGames++;
-                        ISession _tempA = playersInQue.get(0); //first one in que
-                        ISession _tempB = (ISession) o; //new player LFG
+                        final ISession _tempA = playersInQue.get(0); //first one in que
+                        final ISession _tempB = (ISession) o; //new player LFG
 
                         //remove players from que
                         playersInQue.remove(_tempA);
@@ -77,7 +77,7 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
                         final PongGame game = new PongGame(this, _tempA, _tempB, activeGames);
                         _tempA.onMessage("getPongGameInstance", (IPongGame) game);
                         _tempB.onMessage("getPongGameInstance", (IPongGame) game);
-                        
+
                         _tempA.onMessage("getPlayerNumber", 1);
                         _tempB.onMessage("getPlayerNumber", 2);
 
@@ -97,7 +97,15 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
                         Runnable newGame = new Runnable() {
                             @Override
                             public void run() {
-                                game.start();
+                                try {
+                                    game.start();
+
+                                    _tempA.onMessage("getPongGameInstance", (IPongGame) game);
+                                    _tempB.onMessage("getPongGameInstance", (IPongGame) game);
+
+                                } catch (RemoteException ex) {
+                                    Logger.getLogger(YAPTServer.class.getName()).log(Level.SEVERE, null, ex);
+                                }
                             }
                         };
 

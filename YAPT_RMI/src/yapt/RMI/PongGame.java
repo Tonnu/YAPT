@@ -21,7 +21,7 @@ public class PongGame extends Node<ISession> implements IPongGame, Serializable 
     private final IYAPTServer server;
     private IPong pong;
     private ISession playerA, playerB;
-    private boolean game_started, game_stopped;
+    private boolean game_started = false, game_stopped;
     private final int game_id;
     private int leftScore, rightScore = 0;
 
@@ -39,7 +39,6 @@ public class PongGame extends Node<ISession> implements IPongGame, Serializable 
     public PongGame(IYAPTServer server, ISession A, ISession B, int game_id) throws RemoteException {
         this.game_id = game_id;
         //server.onMessage("pushPongGameNumber", this.game_id);
-        this.game_started = false;
         this.server = server;
         this.playerA = A;
         this.playerB = B;
@@ -54,9 +53,11 @@ public class PongGame extends Node<ISession> implements IPongGame, Serializable 
         //other.setPongGame(this);
     }
 
+    @Override
     public void start() {
         this.game_stopped = false;
         this.game_started = true;
+        System.out.println("Set game_started to: " + this.game_started + "(should be true!");
         Timer t = new Timer();
         t.schedule(new TimerTask() {
 
@@ -70,7 +71,8 @@ public class PongGame extends Node<ISession> implements IPongGame, Serializable 
 
     @Override
     public void onMessage(String message, Object o) {
-        if (true) {
+        System.out.println("Game_Started = " + this.game_started);
+        if (this.game_started) {
             try {
                 super.onMessage(message);
 
@@ -112,42 +114,44 @@ public class PongGame extends Node<ISession> implements IPongGame, Serializable 
     }
 
     public void stop() {
-      
-            this.game_stopped = true;
-            this.game_started = true;
-            //this.server.onMessage("gameStopped", this);
-       
+
+        this.game_stopped = true;
+        this.game_started = false;
+        //this.server.onMessage("gameStopped", this);
+
     }
 
     private void update() {
-        try {
-            //pass player rectangles to pong
-            this.pong.update(this.playerA.getPlayerRectangle(), this.playerB.getPlayerRectangle());
-            this.notifyAll("pongUpdate", this.pong.getPongCoordinates());
+        if (game_started) {
+            try {
+                //pass player rectangles to pong
+                this.pong.update(this.playerA.getPlayerRectangle(), this.playerB.getPlayerRectangle());
+                this.notifyAll("pongUpdate", this.pong.getPongCoordinates());
 
             //now get player updates
-            //this.playerA.getPlayerPosition()
-            if (pong.isOutOfLeftBound()) {
-                //server.onMessage("playerScore", 2);
-                rightScore++;
-                stop();
-            } else if (pong.isOutOfRightBound()) {
-                //server.onMessage("playerScore", 1);
-                leftScore++;
-                stop();
-            } else {
-                notifyAll("pongUpdate", this.pong.getPongCoordinates());
-            }
+                //this.playerA.getPlayerPosition()
+                if (pong.isOutOfLeftBound()) {
+                    //server.onMessage("playerScore", 2);
+                    rightScore++;
+                    stop();
+                } else if (pong.isOutOfRightBound()) {
+                    //server.onMessage("playerScore", 1);
+                    leftScore++;
+                    stop();
+                } else {
+                    notifyAll("pongUpdate", this.pong.getPongCoordinates());
+                }
 
-            if (leftScore == 5) {
-                server.onMessage("someoneWon", 1);
-                stop();
-            } else if (rightScore == 5) {
-                server.onMessage("someoneWon", 2);
-                stop();
+                if (leftScore == 5) {
+                    server.onMessage("someoneWon", 1);
+                    stop();
+                } else if (rightScore == 5) {
+                    server.onMessage("someoneWon", 2);
+                    stop();
+                }
+            } catch (RemoteException ex) {
+                Logger.getLogger(PongGame.class.getName()).log(Level.SEVERE, null, ex);
             }
-        } catch (RemoteException ex) {
-            Logger.getLogger(PongGame.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
