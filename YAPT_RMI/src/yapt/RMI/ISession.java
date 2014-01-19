@@ -12,7 +12,7 @@ import java.rmi.RemoteException;
  *
  * @author Toon
  */
-public interface ISession extends INode<IYAPTServer> {
+public interface ISession extends INode<IPongGame> {
 
     public Vector2f getPlayerPosition() throws RemoteException;
 
@@ -29,5 +29,7 @@ public interface ISession extends INode<IYAPTServer> {
     public int getGamePongNumber() throws RemoteException;
 
     public void setGamePongNumber(int _number) throws RemoteException;
+    
+    public void setPongGame(IPongGame _game) throws RemoteException;
     
 }

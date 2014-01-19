@@ -15,7 +15,7 @@ import java.util.Random;
  */
 public class Pong implements IPong, Serializable {
 
-    private Vector2f startPos;
+    private Vector2f location;
     private final double velocity = 5;
     private final double width, height, delta = 0;
     private final Random random;
@@ -27,12 +27,12 @@ public class Pong implements IPong, Serializable {
     private boolean firstMovement, goingStraight;
 
     public Pong(Rectangle left, Rectangle right) {
-        this.startPos = new Vector2f(250, 150);
+        this.location = new Vector2f(250, 150);
         this.width = 50;
         this.height = 50;
         random = new Random();
         destination = new Vector2f(300, 150);
-        this.rectangle = new Rectangle((int) startPos.x, (int) startPos.y, (int) width, (int) height);
+        this.rectangle = new Rectangle((int) location.x, (int) location.y, (int) width, (int) height);
         this.left = left;
         this.right = right;
         angle = 0;
@@ -49,7 +49,7 @@ public class Pong implements IPong, Serializable {
     }
 
     private void move() {
-        this.rectangle = new Rectangle((int) startPos.x, (int) startPos.y, (int) width, (int) height);
+        this.rectangle = new Rectangle((int) location.x, (int) location.y, (int) width, (int) height);
 
         Rectangle lbottom = new Rectangle(left.x, (int) left.getCenterY(), (int) left.width, (int) left.height / 2);
         Rectangle rbottom = new Rectangle(right.x, (int) right.getCenterY(), (int) width, (int) right.height / 2);
@@ -59,20 +59,20 @@ public class Pong implements IPong, Serializable {
         //set direction and movement
         if (!firstMovement) {
             if (goingright) {
-                this.startPos.x += 5 * velocity * 0.16;
+                this.location.x += 5 * velocity * 0.16;
             } else {
-                this.startPos.x -= 5 * velocity * 0.16;
+                this.location.x -= 5 * velocity * 0.16;
             }
 
             if (!goingStraight) {
                 if (goingup) {
-                    this.startPos.y += angle * velocity * 0.16;
+                    this.location.y += angle * velocity * 0.16;
                 } else {
-                    this.startPos.y -= angle * velocity * 0.16;
+                    this.location.y -= angle * velocity * 0.16;
                 }
             }
         } else {
-            this.startPos.x += 5 * velocity * 0.16;
+            this.location.x += 5 * velocity * 0.16;
             firstMovement = false;
             goingup = false;
             goingright = true;
@@ -118,18 +118,18 @@ public class Pong implements IPong, Serializable {
         } else if (rectangle.intersects(bottomBound) || rectangle.intersects(topBound)) {
             goingStraight = false;
             angle = random.nextInt(5);
-            goingup = startPos.y > 0 || startPos.y <= 15;
+            goingup = location.y > 0 || location.y <= 15;
         }
     }
 
     @Override
     public double getX() {
-        return this.startPos.x;
+        return this.location.x;
     }
 
     @Override
     public double getY() {
-        return this.startPos.y;
+        return this.location.y;
     }
 
     @Override
@@ -147,13 +147,25 @@ public class Pong implements IPong, Serializable {
         return this.rectangle;
     }
 
+    @Override
     public boolean isOutOfRightBound() {
         return this.rectangle.x >= 750;
 
     }
 
+    @Override
     public boolean isOutOfLeftBound() {
         return this.rectangle.x <= 0;
+    }
+
+    @Override
+    public void setPongCoordinates(Vector2f coords) {
+        this.location = coords;
+    }
+
+    @Override
+    public Vector2f getPongCoordinates() {
+        return this.location;
     }
 
 }

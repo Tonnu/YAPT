@@ -5,13 +5,12 @@
  */
 package yapt.GAME;
 
-import YAPT.GAME.GameClient;
 import java.awt.Graphics;
 import java.awt.Rectangle;
 import java.rmi.RemoteException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import yapt.RMI.IPong;
+import yapt.RMI.IPongGame;
 import yapt.RMI.ISession;
 import yapt.RMI.IYAPTServer;
 import yapt.RMI.Node;
@@ -21,12 +20,13 @@ import yapt.RMI.Vector2f;
  *
  * @author Toon
  */
-public class Session extends Node<IYAPTServer> implements ISession {
+public class Session extends Node<IPongGame> implements ISession {
 
     private IGameClient game;
     public boolean lookingForGame = false, gameStarted = false, gameInterrupted = false;
     private boolean winner;
     private IYAPTServer server;
+    private IPongGame pongGame;
     private int playerNumber, pongGameNumber = 0;
 
     /**
@@ -42,10 +42,10 @@ public class Session extends Node<IYAPTServer> implements ISession {
         this.pongGameNumber++;
         this.server = server;
         lookingForGame = false;
-        game = new YAPT.GAME.GameClient(this);
+        game = new GameClient(this);
     }
 
-    public YAPT.GAME.GameClient getGameClient() {
+    public GameClient getGameClient() {
         return (GameClient) this.game;
     }
 
@@ -102,18 +102,18 @@ public class Session extends Node<IYAPTServer> implements ISession {
     @Override
     public void onMessage(String message, Object o) throws RemoteException {
         super.onMessage(message);
-
         switch (message) {
             case "pongUpdate":
-                this.game.setPong((IPong) o); //needed for drawing
-                //System.out.println("pongupdate: X=" + this.game.pong.getX() + "y=" + this.pong.getY());
+                Vector2f _tempcoords = (Vector2f) o;
+                this.game.setPongCoordinates(_tempcoords); //needed for drawing
                 break;
             case "pushBatUpdate":
                 if (!gameInterrupted) {
                     //my bat moved, notify server
                     System.out.println("pushing batupdate to server");
                     //server.onMessage(message, this.game.getPlayer().getBat());
-                    server.onMessage("pushSessionUpdate", this); //push new sessionstate to server
+                    //server.onMessage("pushSessionUpdate", this); //push new sessionstate to server
+                    pongGame.onMessage("pushSessionUpdate", this); //push new sessionstate to server
                 }
                 break;
             case "getSessionUpdate":
@@ -125,27 +125,28 @@ public class Session extends Node<IYAPTServer> implements ISession {
                     Vector2f _opponentPosition = (Vector2f) o;
                     //verify the opponent is in the same game as we are, and he also has the other player number
                     //if (_opponent.getPlayerNumber() != this.getPlayerNumber() && this.pongGameNumber == _opponent.getGamePongNumber()) {
-                        //TODO 
-                        //not needed to send the whole bat object, let alone player. Only needed for drawing so send coordinates only.
-                       // if (this.game.getOpponent() == null) {
-                         //   System.out.println("this.game.getOpponent() equals null");
+                    //TODO 
+                    //not needed to send the whole bat object, let alone player. Only needed for drawing so send coordinates only.
+                    // if (this.game.getOpponent() == null) {
+                    //   System.out.println("this.game.getOpponent() equals null");
 //                            this.game.getOpponent().setBatCoordinates(new Vector2f(0, 0)); //needed for drawing 
-                       // } else {
-                      //      System.out.println("Opponent does not equal null");
-                            this.game.getOpponent().setBatCoordinates(_opponentPosition); //needed for drawing 
-                        //}
+                    // } else {
+                    //      System.out.println("Opponent does not equal null");
+                    this.game.getOpponent().setBatCoordinates(_opponentPosition); //needed for drawing 
+                    //}
                     //}
                 }
                 break;
             case "getPongGameNumber":
                 this.setGamePongNumber((int) o);
                 break;
+            case "getPongGameInstance":
+                this.pongGame = (IPongGame) o;
+                break;
             case "pushLookingForGame":
-                System.out.println("in session pushLookingForGame!!!!");
                 gameInterrupted = false;
                 if (!lookingForGame) {
                     lookingForGame = true;
-                    System.out.println("Sending LFG request!!!!");
                     server.onMessage("newLookingForGame", this);
                 }
                 break;
@@ -155,7 +156,7 @@ public class Session extends Node<IYAPTServer> implements ISession {
                 gameInterrupted = false;
                 ISession _temp = (ISession) o;
 
-                this.game.setOpponent(new Player("Other", _temp));
+                this.game.setOpponent(new Player("Other", _temp)); //needed for drawing
                 //this.game.setOpponent((IPlayer) _temp.getGameClient().getPlayer());
                 if (this.getPlayerNumber() == 1) {
                     //spawn at the left side
@@ -169,8 +170,14 @@ public class Session extends Node<IYAPTServer> implements ISession {
             case "getPlayerNumber":
                 this.playerNumber = (int) o;
                 break;
+            case "leaveQue":
+                server.onMessage("leftQue", this);
+                lookingForGame = false;
+                gameInterrupted = true;
+                gameStarted = false;
+                break;
             case "pushDisconnect":
-                server.onMessage("disc", this);
+                pongGame.onMessage("gameDisconnect", this);
                 lookingForGame = false;
                 gameInterrupted = true;
                 gameStarted = false;
@@ -184,6 +191,11 @@ public class Session extends Node<IYAPTServer> implements ISession {
             default:
                 System.out.println("Session didn't recognize: " + message);
         }
+    }
+
+    @Override
+    public void setPongGame(IPongGame pongGame) {
+        this.pongGame = pongGame;
     }
 
     @Override

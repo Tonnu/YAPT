@@ -3,20 +3,20 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package YAPT.GAME;
+package yapt.GAME;
 
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Rectangle;
 import java.awt.geom.Ellipse2D;
 import java.io.Serializable;
 import java.rmi.RemoteException;
 import java.util.Collections;
 import java.util.Timer;
 import yapt.RMI.IPong;
-import yapt.GAME.IGameClient;
-import yapt.GAME.Player;
-import yapt.GAME.IPlayer;
 import yapt.RMI.ISession;
+import yapt.RMI.Pong;
+import yapt.RMI.Vector2f;
 
 /**
  *
@@ -24,7 +24,7 @@ import yapt.RMI.ISession;
  */
 public class GameClient implements IGameClient, Serializable {
 
-    private IPong pong;
+    private Pong pong;
     private Timer t;
     private IPlayer you, opponent;
     private ISession session;
@@ -41,6 +41,7 @@ public class GameClient implements IGameClient, Serializable {
         //opponent = new Player("other", 2);
         this.session = session;
         you = new Player("Toon", session);
+        pong = new Pong(new Rectangle(), new Rectangle());
     }
 
     @Override
@@ -83,9 +84,13 @@ public class GameClient implements IGameClient, Serializable {
      * Needed for drawing the pong at the correct coordinates.
      */
     public void setPong(IPong _pong) {
-        this.pong = _pong;
+        this.pong = (Pong)_pong;
     }
 
+    @Override
+    public void setPongCoordinates(Vector2f coords){
+        this.pong.setPongCoordinates(coords);
+    }
     @Override
     public void setOpponent(IPlayer _opponent) {
         this.opponent = (IPlayer) _opponent;
@@ -100,4 +105,5 @@ public class GameClient implements IGameClient, Serializable {
     public void resetPlayer() {
         this.you = new Player("Name", session);
     }
+    
 }

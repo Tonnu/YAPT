@@ -165,14 +165,14 @@ public class YAPTPanel extends javax.swing.JPanel {
     }//GEN-LAST:event_formMouseClicked
 
     private void button1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_button1ActionPerformed
-        //if we're not looking for a game and button is pressed, start looking for game
-        if (!isLookingForGame() && (sessionImpl == null || !hasGameStarted())) {
-            //unwise
-            System.setSecurityManager(null);
-            //String serverAddress = (GameFrame.ARGS.length < 1) ? "localhost" : GameFrame.ARGS[0];
-            String serverAddress = "localhost";
-            //when trying to find a game, try to connect to server first
-            try {
+        try {
+            if (!isLookingForGame() && (sessionImpl == null || !hasGameStarted())) {
+                //unwise
+                System.setSecurityManager(null);
+                //String serverAddress = (GameFrame.ARGS.length < 1) ? "localhost" : GameFrame.ARGS[0];
+                String serverAddress = "localhost";
+                //when trying to find a game, try to connect to server first
+
                 //register clientStub at remote server
                 Registry remoteRegistry = LocateRegistry.getRegistry(serverAddress, RMI_PORT);
                 server = (IYAPTServer) remoteRegistry.lookup(IYAPTServer.class.getSimpleName());
@@ -195,28 +195,28 @@ public class YAPTPanel extends javax.swing.JPanel {
                 gameloop = new Thread(r);
                 gameloop.start();
 
-            } catch (NotBoundException | RemoteException t) {
-                Logger.getLogger(IYAPTServer.class.getName()).log(
-                        Level.SEVERE,
-                        "An error ocurred. Ensure that no RMI server is running, then run this class as follows:\n"
-                        + "java -Djava.rmi.server.hostname=PUBLIC_CLIENT_IP -cp RMI-project-1.0-SNAPSHOT.jar nl.fontys.vangeenen.rmi.ClientImpl PUBLIC_SERVER_IP\n"
-                        + "* The value PUBLIC_SERVER_IP must equal the publicly routable IP of the server.\n"
-                        + "* The value PUBLIC_CLIENT_IP must equal YOUR routable IP.",
-                        t
-                );
-                System.exit(1);
-            }
-            //if we are looking for game and button is pressed, we should disconnect from the server
-            //OR if we're playing a game (gameStarted == true) and we pushed the button, we should also disc
-        } else if ((isLookingForGame() || hasGameStarted())) {
-            try {
+                //if we are looking for game and button is pressed, we should disconnect from the server
+                //OR if we're playing a game (gameStarted == true) and we pushed the button, we should also disc
+            } else if (hasGameStarted()) {
                 gameloop.interrupt();
                 sessionImpl.onMessage("pushDisconnect", null);
+
+            } else if (isLookingForGame()) {
+                gameloop.interrupt();
+                sessionImpl.onMessage("leaveQue", null);
+
                 button1.setLabel("Find Game!");
-            } catch (RemoteException ex) {
-                Logger.getLogger(YAPTPanel.class.getName()).log(Level.SEVERE, null, ex);
             }
-        } else {
+        } catch (NotBoundException | RemoteException t) {
+            Logger.getLogger(IYAPTServer.class.getName()).log(
+                    Level.SEVERE,
+                    "An error ocurred. Ensure that no RMI server is running, then run this class as follows:\n"
+                    + "java -Djava.rmi.server.hostname=PUBLIC_CLIENT_IP -cp RMI-project-1.0-SNAPSHOT.jar nl.fontys.vangeenen.rmi.ClientImpl PUBLIC_SERVER_IP\n"
+                    + "* The value PUBLIC_SERVER_IP must equal the publicly routable IP of the server.\n"
+                    + "* The value PUBLIC_CLIENT_IP must equal YOUR routable IP.",
+                    t
+            );
+            System.exit(1);
         }
 
     }//GEN-LAST:event_button1ActionPerformed

@@ -24,4 +24,12 @@ public interface IPong {
     public Rectangle getRectangle();
 
     public void update(Rectangle leftPlayer, Rectangle rightPlayer);
+    
+    public void setPongCoordinates(Vector2f coords);
+    
+    public Vector2f getPongCoordinates();
+
+    public boolean isOutOfLeftBound();
+
+    public boolean isOutOfRightBound();
 }

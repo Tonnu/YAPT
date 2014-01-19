@@ -3,7 +3,9 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/C:/Users/Lenny/Documents/NetBeansProjects/YAPTServer/src/yaptserver/YAPTServer.java</file>
+            <file>file:/home/tonnu/Development/YAPT/YAPTServer/src/yaptserver/YAPTServer.java</file>
+            <file>file:/home/tonnu/Development/YAPT/YAPTServer/src/yaptserver/PongGame.java</file>
+            <file>file:/home/tonnu/Development/YAPT/YAPTServer/src/yaptserver/IPongGame.java</file>
         </group>
     </open-files>
 </project-private>

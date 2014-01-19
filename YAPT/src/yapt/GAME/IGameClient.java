@@ -5,11 +5,11 @@
  */
 package yapt.GAME;
 
-import yapt.GAME.IPlayer;
 import java.awt.Graphics;
 import java.rmi.RemoteException;
 import java.util.Collections;
 import yapt.RMI.IPong;
+import yapt.RMI.Vector2f;
 
 /**
  *
@@ -32,4 +32,6 @@ public interface IGameClient {
     public IPlayer getOpponent();
     
     public void resetPlayer();
+    
+    public void setPongCoordinates(Vector2f coords);
 }
