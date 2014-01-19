@@ -5,7 +5,6 @@
  */
 package yaptserver;
 
-import yapt.RMI.PongGame;
 import yapt.RMI.IPongGame;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -36,9 +35,6 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
     private ExecutorService executor;
     private final Lock lock = new ReentrantLock();
 
-    /*TODO:
-     IMPLEMENT THREADPOOL
-     */
     public YAPTServer() throws RemoteException {
         //pong = new Pong(this);
         //pong.register(this);
@@ -75,17 +71,19 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
                         playersInQue.remove(_tempB);
 
                         final PongGame game = new PongGame(this, _tempA, _tempB, activeGames);
-                        _tempA.onMessage("getPongGameInstance", (IPongGame) game);
-                        _tempB.onMessage("getPongGameInstance", (IPongGame) game);
+                        IPongGame gamestub = (IPongGame) UnicastRemoteObject.exportObject(game, 0);
+
+                        _tempA.onMessage("getPongGameInstance", (IPongGame) gamestub);
+                        _tempB.onMessage("getPongGameInstance", (IPongGame) gamestub);
 
                         _tempA.onMessage("getPlayerNumber", 1);
                         _tempB.onMessage("getPlayerNumber", 2);
 
-                        game.register(_tempA);
-                        game.register(_tempB);
+                        gamestub.register(_tempA);
+                        gamestub.register(_tempB);
 
-                        _tempA.register(game);
-                        _tempB.register(game);
+                        _tempA.register(gamestub);
+                        _tempB.register(gamestub);
 
                         //we have to notify the second player first he has found a game
                         //because player 1 has already made gameclient and a player + bat object
@@ -126,14 +124,16 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
                                 System.out.println("A player has left the que!");
                                 break;
                             } catch (Exception ex) {
-                                playersInQue.remove(_player);
+                                ex.printStackTrace();
                                 break;
                             }
                         }
                     }
+                    break;
                 case "gameStopped":
                     IPongGame _game = (IPongGame) o;
                     games.remove((PongGame) _game);
+                    _game = null;
                     break;
                 case "someoneWon":
                 //end the game;
@@ -157,13 +157,10 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
             final YAPTServer server = new YAPTServer();
             final IYAPTServer serverStub = (IYAPTServer) UnicastRemoteObject.exportObject(server, 0);
             final Registry registry = LocateRegistry.createRegistry(RMI_PORT);
-            registry
-                    .rebind(IYAPTServer.class
-                            .getSimpleName(), serverStub);
+            registry.rebind(IYAPTServer.class.getSimpleName(), serverStub);
             Logger.getLogger(IYAPTServer.class
                     .getName()).log(Level.INFO, "started {0}", IYAPTServer.class
                             .getSimpleName());
-            //server.startPushing();
         } catch (Throwable t) {
             Logger.getLogger(YAPTServer.class.getName()).log(
                     Level.SEVERE,

@@ -5,20 +5,26 @@
  */
 package yapt.RMI;
 
+import java.rmi.RemoteException;
+
 /**
  *
  * @author Toon
  */
 public interface IPongGame extends INode<ISession> {
 
-    int getGameNumber();
+    int getGameNumber() throws RemoteException;
 
-    public IPong getPong();
+    public IPong getPong() throws RemoteException;
 
-    public ISession getPlayerA();
+    public ISession getPlayerA() throws RemoteException;
 
-    public ISession getPlayerB();
+    public ISession getPlayerB() throws RemoteException;
     
-    public void start();
+    public void start() throws RemoteException;
+    
+    public int[] getPlayerScores() throws RemoteException;
+    
+    public void stop() throws RemoteException;
 
 }

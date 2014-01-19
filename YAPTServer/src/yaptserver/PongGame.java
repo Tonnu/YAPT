@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package yapt.RMI;
+package yaptserver;
 
 import java.io.Serializable;
 import java.rmi.RemoteException;
@@ -11,6 +11,12 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import yapt.RMI.IPong;
+import yapt.RMI.IPongGame;
+import yapt.RMI.ISession;
+import yapt.RMI.IYAPTServer;
+import yapt.RMI.Node;
+import yapt.RMI.Pong;
 
 /**
  *
@@ -113,6 +119,7 @@ public class PongGame extends Node<ISession> implements IPongGame, Serializable 
 
     }
 
+    @Override
     public void stop() {
 
         this.game_stopped = true;
@@ -155,6 +162,7 @@ public class PongGame extends Node<ISession> implements IPongGame, Serializable 
         }
     }
 
+    @Override
     public int[] getPlayerScores() {
         return new int[]{leftScore, rightScore};
     }
@@ -167,20 +175,6 @@ public class PongGame extends Node<ISession> implements IPongGame, Serializable 
     @Override
     public ISession getPlayerB() {
         return playerB;
-    }
-
-    public void getSessionUpdate(ISession _temp) {
-        try {
-            if (_temp.getPlayerNumber() == this.playerA.getPlayerNumber()) {
-                //recieved left player update;
-                this.playerA = _temp;
-            } else if (_temp.getPlayerNumber() == this.playerB.getPlayerNumber()) {
-                //recieved right player update;
-                this.playerB = _temp;
-            }
-        } catch (RemoteException ex) {
-            Logger.getLogger(PongGame.class.getName()).log(Level.SEVERE, null, ex);
-        }
     }
 
     @Override
