@@ -72,7 +72,7 @@ public class PongGame extends Node<ISession> implements IPongGame, Serializable 
                 update();
             }
 
-        }, 1000, 16);
+        }, 1000, 33); // 30 FPS
     }
 
     @Override

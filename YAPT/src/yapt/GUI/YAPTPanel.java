@@ -55,7 +55,7 @@ public class YAPTPanel extends javax.swing.JPanel {
                 }
             };
 
-            t.schedule(tt, 1000, 16);
+            t.schedule(tt, 1000, 33); //30 FPS TODO need to synch with server ponggame
         }
     };
 
