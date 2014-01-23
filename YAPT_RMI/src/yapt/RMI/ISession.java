@@ -32,4 +32,6 @@ public interface ISession extends INode<IPongGame> {
     
     public void setPongGame(IPongGame _game) throws RemoteException;
     
+    public IPongGame getPongGame() throws RemoteException;
+    
 }

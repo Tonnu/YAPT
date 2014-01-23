@@ -5,6 +5,7 @@
  */
 package yaptserver;
 
+import java.awt.List;
 import java.io.Serializable;
 import java.rmi.RemoteException;
 import java.util.Timer;
@@ -190,4 +191,5 @@ public class PongGame extends Node<ISession> implements IPongGame, Serializable 
     public IPong getPong() {
         return this.pong;
     }
+   
 }

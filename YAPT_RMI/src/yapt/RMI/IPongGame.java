@@ -5,6 +5,7 @@
  */
 package yapt.RMI;
 
+import java.awt.List;
 import java.rmi.RemoteException;
 
 /**
@@ -26,5 +27,4 @@ public interface IPongGame extends INode<ISession> {
     public int[] getPlayerScores() throws RemoteException;
     
     public void stop() throws RemoteException;
-
 }

@@ -7,6 +7,7 @@
 package yapt.RMI;
 
 import java.rmi.RemoteException;
+import java.util.Collection;
 
 /**
  *

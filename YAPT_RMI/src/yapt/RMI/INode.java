@@ -7,6 +7,7 @@ package yapt.RMI;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
+import java.util.Collection;
 
 /**
  *
@@ -40,4 +41,6 @@ public interface INode<T extends INode> extends Remote {
     public void notifyAll(String message, Object o) throws RemoteException;
     
     public void unRegister(T other) throws RemoteException;
+    
+    public Collection getOthers() throws RemoteException;
 }

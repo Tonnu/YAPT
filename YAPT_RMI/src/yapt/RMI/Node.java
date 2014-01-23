@@ -48,5 +48,10 @@ public abstract class Node<T extends INode> implements INode<T> {
             else other.onMessage(message);
         }
     }
+    
+    @Override
+    public Collection getOthers(){
+        return others;
+    }
 
 }

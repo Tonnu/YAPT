@@ -11,6 +11,7 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -33,19 +34,25 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
     private List<ISession> playersInQue;
     private ExecutorService executor;
     private Lobby lobby;
+
+    public List<PongGame> getCurrentGames() throws RemoteException {
+        return this.games;
+    }
+
     
+
     public YAPTServer() throws RemoteException {
         this.games = Collections.synchronizedList(new ArrayList<PongGame>());
         this.playersInQue = Collections.synchronizedList(new ArrayList<ISession>());
-        lobby = new Lobby();
+        lobby = new Lobby(this);
         executor = Executors.newFixedThreadPool(50);//50 threads
 
     }
 
-    public ILobby getLobby(){
+    public ILobby getLobby() {
         return this.lobby;
     }
-    
+
     @Override
     public void register(ISession other) throws RemoteException {
         super.register(other);
@@ -87,6 +94,9 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
                         _tempA.register(gamestub);
                         _tempB.register(gamestub);
 
+                        lobby.register(_tempB);
+                        lobby.register(_tempA);
+
                         //we have to notify the second player first he has found a game
                         //because player 1 has already made gameclient and a player + bat object
                         //if you would first notify player a that player b has joined and pass the session b object to session a,
@@ -108,9 +118,7 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
 
                         games.add(game);
                         executor.execute(newGame);
-                        lobby.register(_tempB);
-                        lobby.register(_tempA);
-                        
+
                         lobby.newMessage();
                     }
                     break;
@@ -135,7 +143,7 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
                 case "gameStopped":
                     IPongGame _game = (IPongGame) o;
                     games.remove((PongGame) _game);
-                    
+
                     _game = null;
                     break;
                 case "someoneWon":

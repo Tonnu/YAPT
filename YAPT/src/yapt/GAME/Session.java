@@ -186,6 +186,11 @@ public class Session extends Node<IPongGame> implements ISession {
         }
     }
 
+    public IPongGame getPongGame() {
+        return pongGame;
+    }
+
+    
     @Override
     public void setPongGame(IPongGame pongGame) {
         this.pongGame = pongGame;
