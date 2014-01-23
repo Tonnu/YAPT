@@ -173,9 +173,9 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
         try {
             final YAPTServer server = new YAPTServer();
             final IYAPTServer serverStub = (IYAPTServer) UnicastRemoteObject.exportObject(server, 0);
-            final Registry registry = LocateRegistry.createRegistry(RMI_PORT);
             final Lobby lobby = new Lobby();
             final ILobby lobbyStub = (ILobby) UnicastRemoteObject.exportObject(lobby, 0);
+            final Registry registry = LocateRegistry.createRegistry(RMI_PORT);
             registry.rebind(IYAPTServer.class.getSimpleName(), serverStub);
             registry.rebind(ILobby.class.getSimpleName(), lobbyStub);
 
