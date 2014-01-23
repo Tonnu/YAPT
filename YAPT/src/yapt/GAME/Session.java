@@ -110,7 +110,11 @@ public class Session extends Node<IPongGame> implements ISession {
         super.onMessage(message);
         switch (message) {
             case "PublicChatMessage":
-                String chatMessage = (String)o;
+                String chatMessage = (String) o;
+                lobbyPanel.newMessage(chatMessage);
+                break;
+            case "GameChatMessage":
+                chatMessage = (String) o;
                 gamePanel.newMessage(chatMessage);
                 break;
             case "pongUpdate":
@@ -193,7 +197,6 @@ public class Session extends Node<IPongGame> implements ISession {
         return pongGame;
     }
 
-    
     @Override
     public void setPongGame(IPongGame pongGame) {
         this.pongGame = pongGame;

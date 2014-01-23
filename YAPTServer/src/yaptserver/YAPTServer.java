@@ -5,6 +5,8 @@
  */
 package yaptserver;
 
+import java.rmi.AccessException;
+import java.rmi.NotBoundException;
 import yapt.RMI.IPongGame;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -33,7 +35,7 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
     private List<PongGame> games;
     private List<ISession> playersInQue;
     private ExecutorService executor;
-    private Lobby lobby;
+    private ILobby lobby;
 
     public List<PongGame> getCurrentGames() throws RemoteException {
         return this.games;
@@ -42,11 +44,12 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
     public YAPTServer() throws RemoteException {
         this.games = Collections.synchronizedList(new ArrayList<PongGame>());
         this.playersInQue = Collections.synchronizedList(new ArrayList<ISession>());
-        lobby = new Lobby(this);
+
         executor = Executors.newFixedThreadPool(50);//50 threads
 
     }
 
+    @Override
     public ILobby getLobby() {
         return this.lobby;
     }
@@ -63,6 +66,8 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
             super.onMessage(message);
             switch (message) {
                 case "Connected":
+                    Registry reg = LocateRegistry.getRegistry("localhost", RMI_PORT);
+                    this.lobby = (ILobby) reg.lookup(ILobby.class.getSimpleName());
                     this.lobby.register((ISession) o);
                     break;
                 case "newLookingForGame":
@@ -119,8 +124,6 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
 
                         games.add(game);
                         executor.execute(newGame);
-
-                        lobby.newMessage();
                     }
                     break;
                 case "leftQue":
@@ -155,6 +158,8 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
             }
         } catch (RemoteException ex) {
             ex.printStackTrace();
+        } catch (NotBoundException ex) {
+            Logger.getLogger(YAPTServer.class.getName()).log(Level.SEVERE, null, ex);
         }
 
     }
@@ -169,7 +174,11 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
             final YAPTServer server = new YAPTServer();
             final IYAPTServer serverStub = (IYAPTServer) UnicastRemoteObject.exportObject(server, 0);
             final Registry registry = LocateRegistry.createRegistry(RMI_PORT);
+            final Lobby lobby = new Lobby();
+            final ILobby lobbyStub = (ILobby) UnicastRemoteObject.exportObject(lobby, 0);
             registry.rebind(IYAPTServer.class.getSimpleName(), serverStub);
+            registry.rebind(ILobby.class.getSimpleName(), lobbyStub);
+
             Logger.getLogger(IYAPTServer.class
                     .getName()).log(Level.INFO, "started {0}", IYAPTServer.class
                             .getSimpleName());
