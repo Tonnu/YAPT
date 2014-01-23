@@ -5,6 +5,7 @@
  */
 package yapt.GUI;
 
+import java.awt.CardLayout;
 import java.awt.Graphics;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
@@ -15,6 +16,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.JPanel;
 import yapt.GAME.KeyListener;
 import yapt.GAME.Session;
 import static yapt.RMI.INode.RMI_PORT;
@@ -30,7 +32,11 @@ public class YAPTPanel extends javax.swing.JPanel {
     private Session sessionImpl;
     private IYAPTServer server;
     private KeyListener keyListener = new KeyListener();
-    Thread gameloop;
+    private CardLayout cl;
+    private Thread gameloop;
+    private JPanel cards;
+    private LobbyPanel lobbyPanel;
+
     Runnable r = new Runnable() {
 
         @Override
@@ -40,7 +46,7 @@ public class YAPTPanel extends javax.swing.JPanel {
                     //wait...
                     Thread.sleep(1);
                 } catch (InterruptedException ex) {
-                    Logger.getLogger(YAPTPanel.class.getName()).log(Level.SEVERE, null, ex);
+                    //search canceld!
                 }
             }
 
@@ -68,6 +74,14 @@ public class YAPTPanel extends javax.swing.JPanel {
         this.requestFocusInWindow();
         this.addKeyListener(keyListener);
 
+    }
+
+    YAPTPanel(CardLayout cl) {
+        initComponents();
+        this.setFocusable(true);
+        this.requestFocusInWindow();
+        this.addKeyListener(keyListener);
+        this.cl = cl;
     }
 
     public KeyListener getKeyListener() {
@@ -199,7 +213,7 @@ public class YAPTPanel extends javax.swing.JPanel {
                 server = (IYAPTServer) remoteRegistry.lookup(IYAPTServer.class.getSimpleName());
 
                 //create RMI-stub for a ClientImpl
-                sessionImpl = new Session(server, this);
+                //sessionImpl = new Session(server, this);
                 final ISession sessionStub = (ISession) UnicastRemoteObject.exportObject(sessionImpl, 0);
 
                 server.register(sessionStub);
@@ -224,12 +238,13 @@ public class YAPTPanel extends javax.swing.JPanel {
                 sessionImpl.onMessage("pushDisconnect", null);
 
                 button1.setLabel("Find Game!");
+                cl.show(cards, "Lobby");
 
             } else if (isLookingForGame()) {
                 System.out.println("Leaving que!");
                 gameloop.interrupt();
                 sessionImpl.onMessage("leaveQue", null);
-
+                cl.show(cards, "Lobby");
                 button1.setLabel("Find Game!");
             }
         } catch (NotBoundException | RemoteException t) {
@@ -257,6 +272,36 @@ public class YAPTPanel extends javax.swing.JPanel {
 
     public void newMessage(String chatMessage) {
         this.jTextArea1.append(chatMessage);
+    }
+
+    public void start(Session sessionImpl, LobbyPanel lobbypanel, JPanel cards) throws RemoteException {
+        this.sessionImpl = sessionImpl;
+        this.lobbyPanel = lobbypanel;
+        this.cards = cards;
+        if (!isLookingForGame() && (this.sessionImpl == null || !hasGameStarted())) {
+            this.sessionImpl.onMessage("pushLookingForGame", null);
+            this.setFocusable(true);
+            this.requestFocusInWindow();
+
+            gameloop = new Thread(r);
+            gameloop.start();
+
+            button1.setLabel("Disconnect...");
+        } else if (hasGameStarted()) {
+            System.out.println("Leaving game!");
+            gameloop.interrupt();
+            sessionImpl.onMessage("pushDisconnect", null);
+
+            button1.setLabel("Find Game!");
+            cl.show(lobbypanel, "Lobby");
+        } else if (isLookingForGame()) {
+            System.out.println("Leaving que!");
+            gameloop.interrupt();
+            sessionImpl.onMessage("leaveQue", null);
+
+            button1.setLabel("Find Game!");
+            cl.show(lobbypanel, "Lobby");
+        }
     }
 
 }

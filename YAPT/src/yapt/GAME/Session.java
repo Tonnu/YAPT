@@ -30,7 +30,8 @@ public class Session extends Node<IPongGame> implements ISession {
     private IYAPTServer server;
     private IPongGame pongGame;
     private int playerNumber, pongGameNumber = 0;
-    private YAPTPanel lobbyPanel;
+    private YAPTPanel gamePanel;
+    private LobbyPanel lobbyPanel;
 
     /**
      * *
@@ -41,11 +42,12 @@ public class Session extends Node<IPongGame> implements ISession {
      * @param server
      * @throws java.rmi.RemoteException
      */
-    public Session(IYAPTServer server, YAPTPanel lobbyPanel) throws RemoteException {
+    public Session(IYAPTServer server, YAPTPanel gamepanel, LobbyPanel lobbyPanel) throws RemoteException {
         this.pongGameNumber++;
         this.server = server;
         lookingForGame = false;
         game = new GameClient(this);
+        this.gamePanel = gamepanel;
         this.lobbyPanel = lobbyPanel;
     }
 
@@ -109,7 +111,7 @@ public class Session extends Node<IPongGame> implements ISession {
         switch (message) {
             case "PublicChatMessage":
                 String chatMessage = (String)o;
-                lobbyPanel.newMessage(chatMessage);
+                gamePanel.newMessage(chatMessage);
                 break;
             case "pongUpdate":
                 Vector2f _tempcoords = (Vector2f) o;
@@ -180,6 +182,7 @@ public class Session extends Node<IPongGame> implements ISession {
                 gameInterrupted = true;
                 lookingForGame = false;
                 game.resetPlayer();
+                lobbyPanel.showPanel();
                 break;
             default:
                 System.out.println("Session didn't recognize: " + message);

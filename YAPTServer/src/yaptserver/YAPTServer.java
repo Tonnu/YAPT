@@ -39,8 +39,6 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
         return this.games;
     }
 
-    
-
     public YAPTServer() throws RemoteException {
         this.games = Collections.synchronizedList(new ArrayList<PongGame>());
         this.playersInQue = Collections.synchronizedList(new ArrayList<ISession>());
@@ -64,6 +62,9 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
         try {
             super.onMessage(message);
             switch (message) {
+                case "Connected":
+                    this.lobby.register((ISession) o);
+                    break;
                 case "newLookingForGame":
                     //first check if there is someone else in que for a game
                     if (playersInQue.isEmpty()) {
