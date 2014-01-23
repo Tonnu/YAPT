@@ -3,11 +3,13 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package yapt.RMI;
+package yaptserver;
 
 import java.awt.Rectangle;
 import java.io.Serializable;
 import java.util.Random;
+import yapt.RMI.IPong;
+import yapt.RMI.Vector2f;
 
 /**
  *

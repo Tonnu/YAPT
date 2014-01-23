@@ -39,7 +39,6 @@ public class GameClient implements IGameClient, Serializable {
         //opponent = new Player("other", 2);
         this.session = session;
         you = new Player("Toon", session);
-        //pong = new Pong(new Rectangle(), new Rectangle());
     }
 
 

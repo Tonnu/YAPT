@@ -15,10 +15,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import yapt.RMI.ILobby;
 import yapt.RMI.ISession;
 import yapt.RMI.IYAPTServer;
 import yapt.RMI.Node;
@@ -33,17 +32,20 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
     private List<PongGame> games;
     private List<ISession> playersInQue;
     private ExecutorService executor;
-    private final Lock lock = new ReentrantLock();
-
+    private Lobby lobby;
+    
     public YAPTServer() throws RemoteException {
-        //pong = new Pong(this);
-        //pong.register(this);
         this.games = Collections.synchronizedList(new ArrayList<PongGame>());
         this.playersInQue = Collections.synchronizedList(new ArrayList<ISession>());
+        lobby = new Lobby();
         executor = Executors.newFixedThreadPool(50);//50 threads
 
     }
 
+    public ILobby getLobby(){
+        return this.lobby;
+    }
+    
     @Override
     public void register(ISession other) throws RemoteException {
         super.register(other);
@@ -98,10 +100,7 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
                                 try {
                                     game.start();
 
-                                    _tempA.onMessage("getPongGameInstance", (IPongGame) game);
-                                    _tempB.onMessage("getPongGameInstance", (IPongGame) game);
-
-                                } catch (RemoteException ex) {
+                                } catch (Exception ex) {
                                     Logger.getLogger(YAPTServer.class.getName()).log(Level.SEVERE, null, ex);
                                 }
                             }
@@ -109,7 +108,10 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
 
                         games.add(game);
                         executor.execute(newGame);
-
+                        lobby.register(_tempB);
+                        lobby.register(_tempA);
+                        
+                        lobby.newMessage();
                     }
                     break;
                 case "leftQue":
@@ -133,6 +135,7 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
                 case "gameStopped":
                     IPongGame _game = (IPongGame) o;
                     games.remove((PongGame) _game);
+                    
                     _game = null;
                     break;
                 case "someoneWon":

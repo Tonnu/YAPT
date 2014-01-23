@@ -199,7 +199,7 @@ public class YAPTPanel extends javax.swing.JPanel {
                 server = (IYAPTServer) remoteRegistry.lookup(IYAPTServer.class.getSimpleName());
 
                 //create RMI-stub for a ClientImpl
-                sessionImpl = new Session(server);
+                sessionImpl = new Session(server, this);
                 final ISession sessionStub = (ISession) UnicastRemoteObject.exportObject(sessionImpl, 0);
 
                 server.register(sessionStub);
@@ -254,5 +254,9 @@ public class YAPTPanel extends javax.swing.JPanel {
     private javax.swing.JTextArea jTextArea1;
     private javax.swing.JTextPane jTextPane1;
     // End of variables declaration//GEN-END:variables
+
+    public void newMessage(String chatMessage) {
+        this.jTextArea1.append(chatMessage);
+    }
 
 }

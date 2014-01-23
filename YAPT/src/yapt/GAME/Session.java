@@ -10,6 +10,8 @@ import java.awt.Rectangle;
 import java.rmi.RemoteException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import yapt.GUI.LobbyPanel;
+import yapt.GUI.YAPTPanel;
 import yapt.RMI.IPongGame;
 import yapt.RMI.ISession;
 import yapt.RMI.IYAPTServer;
@@ -28,6 +30,7 @@ public class Session extends Node<IPongGame> implements ISession {
     private IYAPTServer server;
     private IPongGame pongGame;
     private int playerNumber, pongGameNumber = 0;
+    private YAPTPanel lobbyPanel;
 
     /**
      * *
@@ -38,11 +41,12 @@ public class Session extends Node<IPongGame> implements ISession {
      * @param server
      * @throws java.rmi.RemoteException
      */
-    public Session(IYAPTServer server) throws RemoteException {
+    public Session(IYAPTServer server, YAPTPanel lobbyPanel) throws RemoteException {
         this.pongGameNumber++;
         this.server = server;
         lookingForGame = false;
         game = new GameClient(this);
+        this.lobbyPanel = lobbyPanel;
     }
 
     public GameClient getGameClient() {
@@ -103,6 +107,10 @@ public class Session extends Node<IPongGame> implements ISession {
     public void onMessage(String message, Object o) throws RemoteException {
         super.onMessage(message);
         switch (message) {
+            case "PublicChatMessage":
+                String chatMessage = (String)o;
+                lobbyPanel.newMessage(chatMessage);
+                break;
             case "pongUpdate":
                 Vector2f _tempcoords = (Vector2f) o;
                 this.game.setPongCoordinates(_tempcoords); //needed for drawing
@@ -111,8 +119,6 @@ public class Session extends Node<IPongGame> implements ISession {
                 if (!gameInterrupted) {
                     //my bat moved, notify server
                     System.out.println("pushing batupdate to server");
-                    //server.onMessage(message, this.game.getPlayer().getBat());
-                    //server.onMessage("pushSessionUpdate", this); //push new sessionstate to server
                     pongGame.onMessage("pushSessionUpdate", this); //push new sessionstate to server
                 }
                 break;
@@ -121,20 +127,8 @@ public class Session extends Node<IPongGame> implements ISession {
                 //set opponent's bat for drawing purposes
                 System.out.println("recieved opponent sessionupdate from server");
                 if (!gameInterrupted) {
-                    //ISession _opponent = (ISession) o;
                     Vector2f _opponentPosition = (Vector2f) o;
-                    //verify the opponent is in the same game as we are, and he also has the other player number
-                    //if (_opponent.getPlayerNumber() != this.getPlayerNumber() && this.pongGameNumber == _opponent.getGamePongNumber()) {
-                    //TODO 
-                    //not needed to send the whole bat object, let alone player. Only needed for drawing so send coordinates only.
-                    // if (this.game.getOpponent() == null) {
-                    //   System.out.println("this.game.getOpponent() equals null");
-//                            this.game.getOpponent().setBatCoordinates(new Vector2f(0, 0)); //needed for drawing 
-                    // } else {
-                    //      System.out.println("Opponent does not equal null");
                     this.game.getOpponent().setBatCoordinates(_opponentPosition); //needed for drawing 
-                    //}
-                    //}
                 }
                 break;
             case "getPongGameNumber":
@@ -157,7 +151,6 @@ public class Session extends Node<IPongGame> implements ISession {
                 ISession _temp = (ISession) o;
 
                 this.game.setOpponent(new Player("Other", _temp)); //needed for drawing
-                //this.game.setOpponent((IPlayer) _temp.getGameClient().getPlayer());
                 if (this.getPlayerNumber() == 1) {
                     //spawn at the left side
                     this.game.getPlayer().setBatCoordinates(new Vector2f(10, 150));
