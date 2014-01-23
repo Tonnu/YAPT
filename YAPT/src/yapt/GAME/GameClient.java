@@ -7,15 +7,11 @@ package yapt.GAME;
 
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.Rectangle;
 import java.awt.geom.Ellipse2D;
 import java.io.Serializable;
 import java.rmi.RemoteException;
-import java.util.Collections;
 import java.util.Timer;
-import yapt.RMI.IPong;
 import yapt.RMI.ISession;
-import yapt.RMI.Pong;
 import yapt.RMI.Vector2f;
 
 /**
@@ -24,7 +20,9 @@ import yapt.RMI.Vector2f;
  */
 public class GameClient implements IGameClient, Serializable {
 
-    private Pong pong;
+    //private Pong pong;
+    private Vector2f pongLocation;
+    private double pongWidth = 50, pongHeight = 50;
     private Timer t;
     private IPlayer you, opponent;
     private ISession session;
@@ -41,21 +39,15 @@ public class GameClient implements IGameClient, Serializable {
         //opponent = new Player("other", 2);
         this.session = session;
         you = new Player("Toon", session);
-        pong = new Pong(new Rectangle(), new Rectangle());
+        //pong = new Pong(new Rectangle(), new Rectangle());
     }
 
-    @Override
-    public void updateGameObjects(Collections c) {
-    }
 
     @Override
     public IPlayer getPlayer() throws RemoteException {
         return this.you;
     }
 
-    public IPong getPong() {
-        return this.pong;
-    }
 
     @Override
     public void update(int direction) {
@@ -70,26 +62,19 @@ public class GameClient implements IGameClient, Serializable {
         }
         //draw the pong
         Graphics2D g2d = (Graphics2D) g;
-        if (getPong() != null) {
-            Ellipse2D.Double draw_pong = new Ellipse2D.Double(getPong().getX(), getPong().getY(),
-                    getPong().getWidth(), getPong().getHeight());
+        
+        if(pongLocation != null){
+            Ellipse2D.Double draw_pong = new Ellipse2D.Double(pongLocation.x, pongLocation.y, pongWidth, pongHeight);
             g2d.fill(draw_pong);
             g2d.draw(draw_pong);
         }
     }
 
-    @Override
-    /**
-     * *
-     * Needed for drawing the pong at the correct coordinates.
-     */
-    public void setPong(IPong _pong) {
-        this.pong = (Pong)_pong;
-    }
 
     @Override
-    public void setPongCoordinates(Vector2f coords){
-        this.pong.setPongCoordinates(coords);
+    public void setPongCoordinates(Vector2f _coords){
+        //this.pong.setPongCoordinates(coords);
+        this.pongLocation = _coords;
     }
     @Override
     public void setOpponent(IPlayer _opponent) {

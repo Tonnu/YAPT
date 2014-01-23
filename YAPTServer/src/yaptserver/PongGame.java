@@ -63,7 +63,6 @@ public class PongGame extends Node<ISession> implements IPongGame, Serializable 
     public void start() {
         this.game_stopped = false;
         this.game_started = true;
-        System.out.println("Set game_started to: " + this.game_started + "(should be true!");
         Timer t = new Timer();
         t.schedule(new TimerTask() {
 
