@@ -6,6 +6,7 @@
 package yapt.GUI;
 
 import java.awt.CardLayout;
+import java.awt.event.KeyEvent;
 import java.net.MalformedURLException;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
@@ -53,7 +54,8 @@ public class LobbyPanel extends javax.swing.JPanel {
     }
 
     public void newMessage(String chatMessage) {
-        this.jTextArea1.append(chatMessage);
+        //System.out.println("Someone is calling newMessage()");
+        this.jTextArea1.append(username.toUpperCase() + ": " + chatMessage + "\n");
     }
 
     public void addNewGame(IPongGame game) {
@@ -79,12 +81,12 @@ public class LobbyPanel extends javax.swing.JPanel {
         //unwise
         System.setSecurityManager(null);
         //String serverAddress = (GameFrame.ARGS.length < 1) ? "localhost" : GameFrame.ARGS[0];
-        //String serverAddress = "188.226.136.184";
+        //aserverAddress = "188.226.136.184";
         //when trying to find a game, try to connect to server first
 
         //register clientStub at remote server
-        Registry remoteRegistry = LocateRegistry.getRegistry(serverAddress, RMI_PORT);
-        server = (IYAPTServer)Naming.lookup("//" + serverAddress + ":" + RMI_PORT + "/" + IYAPTServer.class.getSimpleName());
+        //Registry remoteRegistry = LocateRegistry.getRegistry(serverAddress, RMI_PORT);
+        server = (IYAPTServer)Naming.lookup(IYAPTServer.class.getSimpleName());
         //server = (IYAPTServer) remoteRegistry.lookup(IYAPTServer.class.getSimpleName());
         //lobby = (ILobby) remoteRegistry.lookup(ILobby.class.getSimpleName());
         //create RMI-stub for a ClientImpl
@@ -92,10 +94,10 @@ public class LobbyPanel extends javax.swing.JPanel {
         final ISession sessionStub = (ISession) UnicastRemoteObject.exportObject(sessionImpl, 0);
 
         server.register(sessionStub);
-        lobby = (ILobby)Naming.lookup("//"  + serverAddress + ":" + RMI_PORT + "/" + ILobby.class.getSimpleName());
+        lobby = (ILobby)Naming.lookup(ILobby.class.getSimpleName());
 
         //start pushing messages to the server
-        server.onMessage("Connected", sessionImpl);        
+        server.onMessage("Connected", sessionImpl);  
     }
 
     public void showPanel() {
@@ -133,6 +135,9 @@ public class LobbyPanel extends javax.swing.JPanel {
         jTextField1.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyTyped(java.awt.event.KeyEvent evt) {
                 jTextField1KeyTyped(evt);
+            }
+            public void keyReleased(java.awt.event.KeyEvent evt) {
+                jTextField1KeyReleased(evt);
             }
         });
 
@@ -208,6 +213,7 @@ public class LobbyPanel extends javax.swing.JPanel {
 
     private void jTextField1KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField1KeyTyped
         // TODO add your handling code here:
+        //jTextArea1.append("" + evt.getKeyCode());       
     }//GEN-LAST:event_jTextField1KeyTyped
 
     private void btn_joinGameActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_joinGameActionPerformed
@@ -220,6 +226,18 @@ public class LobbyPanel extends javax.swing.JPanel {
             Logger.getLogger(LobbyPanel.class.getName()).log(Level.SEVERE, null, ex);
         }
     }//GEN-LAST:event_btn_joinGameActionPerformed
+
+    private void jTextField1KeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField1KeyReleased
+        // TODO add your handling code here:
+        if(evt.getKeyCode() == KeyEvent.VK_ENTER && !jTextField1.getText().equals("")){
+            try {
+                this.lobby.onMessage("PublicChatMessage", jTextField1.getText());
+                this.jTextField1.setText("");
+            } catch (RemoteException ex) {
+                Logger.getLogger(LobbyPanel.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }//GEN-LAST:event_jTextField1KeyReleased
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

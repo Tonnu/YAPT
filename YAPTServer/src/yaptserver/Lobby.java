@@ -14,9 +14,6 @@ import yapt.RMI.*;
  * @author tonnu
  */
 public class Lobby extends Node<ISession> implements ILobby {
-
-    
-
     public Lobby() {
         
     }
