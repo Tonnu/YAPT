@@ -21,7 +21,7 @@ public class Lobby extends Node<ISession> implements ILobby {
     @Override
     public void register(ISession other) throws RemoteException {
         super.register(other); //To change body of generated methods, choose Tools | Templates.
-        other.onMessage("PublicChatMessage", "Welcome to the server!");
+        other.onMessage("GetPublicChatMessage", "Welcome to the server!");
     }
     
 
@@ -30,7 +30,7 @@ public class Lobby extends Node<ISession> implements ILobby {
         switch (message) {
             case "PublicChatMessage":
                 //got a message in the lobby, send to all clients
-                this.notifyAll("PublicChatMessage", (String) o);
+                this.notifyAll("GetPublicChatMessage", (String) o);
                 break;
             case "GameChatMessage":
                 ISession _sender = (ISession) o;

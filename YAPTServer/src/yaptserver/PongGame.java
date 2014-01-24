@@ -8,6 +8,7 @@ package yaptserver;
 import java.awt.List;
 import java.io.Serializable;
 import java.rmi.RemoteException;
+import java.util.Iterator;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.logging.Level;
@@ -116,6 +117,10 @@ public class PongGame extends Node<ISession> implements IPongGame, Serializable 
 
                         //server.onMessage("gameStopped", this);
                     }
+                    break;
+                case "GameChatMessage":
+                    this.notifyAll("GetGameChatMessage", o);
+                    break;
             }
         }
 
@@ -162,7 +167,7 @@ public class PongGame extends Node<ISession> implements IPongGame, Serializable 
         } else {
             this.server.getLobby().unRegister(this.playerA);
             this.server.getLobby().unRegister(this.playerB);
-            
+
             throw new RemoteException();
         }
     }
@@ -191,5 +196,5 @@ public class PongGame extends Node<ISession> implements IPongGame, Serializable 
     public IPong getPong() {
         return this.pong;
     }
-   
+
 }

@@ -7,6 +7,9 @@ package yapt.GUI;
 
 import java.awt.CardLayout;
 import java.awt.Graphics;
+import java.awt.event.KeyEvent;
+import java.net.MalformedURLException;
+import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -19,6 +22,7 @@ import java.util.logging.Logger;
 import javax.swing.JPanel;
 import yapt.GAME.KeyListener;
 import yapt.GAME.Session;
+import yapt.RMI.ILobby;
 import static yapt.RMI.INode.RMI_PORT;
 import yapt.RMI.ISession;
 import yapt.RMI.IYAPTServer;
@@ -64,6 +68,7 @@ public class YAPTPanel extends javax.swing.JPanel {
             t.schedule(tt, 1000, 33); //30 FPS TODO need to synch with server ponggame
         }
     };
+    private ILobby lobby;
 
     /**
      * Creates new form YAPTPanel that manages menus, buttons, etc.
@@ -142,8 +147,7 @@ public class YAPTPanel extends javax.swing.JPanel {
         button1 = new java.awt.Button();
         jScrollPane1 = new javax.swing.JScrollPane();
         jTextArea1 = new javax.swing.JTextArea();
-        jScrollPane2 = new javax.swing.JScrollPane();
-        jTextPane1 = new javax.swing.JTextPane();
+        jTextField1 = new javax.swing.JTextField();
 
         setPreferredSize(new java.awt.Dimension(1280, 760));
         addMouseListener(new java.awt.event.MouseAdapter() {
@@ -166,22 +170,28 @@ public class YAPTPanel extends javax.swing.JPanel {
         jTextArea1.setRows(5);
         jScrollPane1.setViewportView(jTextArea1);
 
-        jScrollPane2.setViewportView(jTextPane1);
+        jTextField1.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyReleased(java.awt.event.KeyEvent evt) {
+                jTextField1KeyReleased(evt);
+            }
+        });
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jScrollPane2, javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(jScrollPane1))
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(468, 468, 468)
+                        .addComponent(button1, javax.swing.GroupLayout.PREFERRED_SIZE, 174, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(0, 626, Short.MAX_VALUE))
+                    .addGroup(layout.createSequentialGroup()
+                        .addContainerGap()
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jTextField1, javax.swing.GroupLayout.Alignment.TRAILING)
+                            .addComponent(jScrollPane1))))
                 .addContainerGap())
-            .addGroup(layout.createSequentialGroup()
-                .addGap(468, 468, 468)
-                .addComponent(button1, javax.swing.GroupLayout.PREFERRED_SIZE, 174, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(638, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -190,8 +200,8 @@ public class YAPTPanel extends javax.swing.JPanel {
                 .addComponent(button1, javax.swing.GroupLayout.PREFERRED_SIZE, 81, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(228, 228, 228)
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 164, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(7, 7, 7)
-                .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(5, 5, 5)
+                .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
         );
     }// </editor-fold>//GEN-END:initComponents
@@ -261,22 +271,34 @@ public class YAPTPanel extends javax.swing.JPanel {
 
     }//GEN-LAST:event_button1ActionPerformed
 
+    private void jTextField1KeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField1KeyReleased
+        // TODO add your handling code here:
+        if (evt.getKeyCode() == KeyEvent.VK_ENTER && !jTextField1.getText().equals("")) {
+            try {
+                this.sessionImpl.onMessage("SendGameChatMessage", this.sessionImpl.getUsername() + ": " + jTextField1.getText());
+                this.jTextField1.setText("");
+            } catch (RemoteException ex) {
+                Logger.getLogger(LobbyPanel.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }//GEN-LAST:event_jTextField1KeyReleased
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private java.awt.Button button1;
     private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JTextArea jTextArea1;
-    private javax.swing.JTextPane jTextPane1;
+    private javax.swing.JTextField jTextField1;
     // End of variables declaration//GEN-END:variables
 
     public void newMessage(String chatMessage) {
-        this.jTextArea1.append(chatMessage);
+        this.jTextArea1.append(chatMessage + "\n");
     }
 
-    public void start(Session sessionImpl, LobbyPanel lobbypanel, JPanel cards) throws RemoteException {
+    public void start(Session sessionImpl, LobbyPanel lobbypanel, JPanel cards) throws RemoteException, NotBoundException, MalformedURLException {
         this.sessionImpl = sessionImpl;
         this.lobbyPanel = lobbypanel;
+        lobby = (ILobby) Naming.lookup(ILobby.class.getSimpleName());
         this.cards = cards;
         if (!isLookingForGame() && (this.sessionImpl == null || !hasGameStarted())) {
             this.sessionImpl.onMessage("pushLookingForGame", null);

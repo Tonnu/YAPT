@@ -7,11 +7,15 @@ package yapt.GAME;
 
 import java.awt.Graphics;
 import java.awt.Rectangle;
+import java.net.MalformedURLException;
+import java.rmi.Naming;
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import yapt.GUI.LobbyPanel;
 import yapt.GUI.YAPTPanel;
+import yapt.RMI.ILobby;
 import yapt.RMI.IPongGame;
 import yapt.RMI.ISession;
 import yapt.RMI.IYAPTServer;
@@ -32,6 +36,8 @@ public class Session extends Node<IPongGame> implements ISession {
     private int playerNumber, pongGameNumber = 0;
     private YAPTPanel gamePanel;
     private LobbyPanel lobbyPanel;
+    private String username;
+    private ILobby lobby;
 
     /**
      * *
@@ -42,13 +48,26 @@ public class Session extends Node<IPongGame> implements ISession {
      * @param server
      * @throws java.rmi.RemoteException
      */
-    public Session(IYAPTServer server, YAPTPanel gamepanel, LobbyPanel lobbyPanel) throws RemoteException {
-        this.pongGameNumber++;
-        this.server = server;
-        lookingForGame = false;
-        game = new GameClient(this);
-        this.gamePanel = gamepanel;
-        this.lobbyPanel = lobbyPanel;
+    public Session(String username, IYAPTServer server, YAPTPanel gamepanel, LobbyPanel lobbyPanel) throws RemoteException {
+        try {
+            this.pongGameNumber++;
+            this.server = server;
+            lookingForGame = false;
+            game = new GameClient(this);
+            this.gamePanel = gamepanel;
+            this.lobbyPanel = lobbyPanel;
+            this.username = username;
+            this.lobby = lobby = (ILobby) Naming.lookup(ILobby.class.getSimpleName());
+        } catch (NotBoundException ex) {
+            Logger.getLogger(Session.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (MalformedURLException ex) {
+            Logger.getLogger(Session.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+    }
+
+    public String getUsername() {
+        return username;
     }
 
     public GameClient getGameClient() {
@@ -109,13 +128,19 @@ public class Session extends Node<IPongGame> implements ISession {
     public void onMessage(String message, Object o) throws RemoteException {
         super.onMessage(message);
         switch (message) {
-            case "PublicChatMessage":
+            case "GetPublicChatMessage":
                 String chatMessage = (String) o;
                 lobbyPanel.newMessage(chatMessage);
                 break;
-            case "GameChatMessage":
+            case "GetGameChatMessage":
                 chatMessage = (String) o;
                 gamePanel.newMessage(chatMessage);
+                break;
+            case "SendPublicChatMessage":
+                lobby.onMessage("PublicChatMessage", (String) o);
+                break;
+            case "SendGameChatMessage":
+                pongGame.onMessage("GameChatMessage", (String) o);
                 break;
             case "pongUpdate":
                 Vector2f _tempcoords = (Vector2f) o;

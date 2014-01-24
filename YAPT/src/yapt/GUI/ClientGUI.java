@@ -54,7 +54,7 @@ public class ClientGUI {
         txtarea.setColumns(100);
         txtarea.setRows(100);
         control.add(username);
-        
+
         //control.add(txtarea);
         control.add(new JButton(new AbstractAction("Login") {
 
@@ -62,9 +62,13 @@ public class ClientGUI {
             public void actionPerformed(ActionEvent e) {
                 try {
                     USERNAME = username.getText();
-                    lobby.tryLogin(serverAddress, USERNAME, gamePanel, cards);
-                    control.setVisible(false);
-                    cl.show(cards, "Lobby");
+                    if (USERNAME.equals("")) {
+                        username.setText("Please fill in your username.");
+                    } else {
+                        lobby.tryLogin(serverAddress, USERNAME, gamePanel, cards);
+                        control.setVisible(false);
+                        cl.show(cards, "Lobby");
+                    }
                 } catch (RemoteException | NotBoundException ex) {
                     control.setVisible(true);
                     username.setText("Server timed out. Try again later.");
