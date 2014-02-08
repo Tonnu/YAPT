@@ -34,4 +34,6 @@ public interface ISession extends INode<IPongGame> {
     
     public IPongGame getPongGame() throws RemoteException;
     
+    public String getUsername() throws RemoteException;
+    
 }

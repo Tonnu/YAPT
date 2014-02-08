@@ -11,6 +11,8 @@ import java.net.MalformedURLException;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
+import java.util.Collection;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import yapt.GUI.LobbyPanel;
@@ -66,6 +68,7 @@ public class Session extends Node<IPongGame> implements ISession {
 
     }
 
+    @Override
     public String getUsername() {
         return username;
     }
@@ -128,6 +131,12 @@ public class Session extends Node<IPongGame> implements ISession {
     public void onMessage(String message, Object o) throws RemoteException {
         super.onMessage(message);
         switch (message) {
+            case "addPlayerToLobby":
+                lobbyPanel.setOnlinePlayers((Collection<ISession>)o);
+                break;
+            case "getGameList":
+                lobbyPanel.setPongGames((List<IPongGame>) o);
+                break;
             case "GetPublicChatMessage":
                 String chatMessage = (String) o;
                 lobbyPanel.newMessage(chatMessage);

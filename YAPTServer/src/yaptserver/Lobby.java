@@ -22,6 +22,8 @@ public class Lobby extends Node<ISession> implements ILobby {
     public void register(ISession other) throws RemoteException {
         super.register(other); //To change body of generated methods, choose Tools | Templates.
         other.onMessage("GetPublicChatMessage", "Welcome to the server!");
+        
+        this.notifyAll("addPlayerToLobby", this.getOthers());
     }
     
 

@@ -11,17 +11,22 @@ import java.net.MalformedURLException;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.DefaultListModel;
+import javax.swing.JList;
 import javax.swing.JPanel;
+import javax.swing.ListModel;
+import javax.swing.text.Position;
 import yapt.GAME.Session;
 import yapt.RMI.ILobby;
-import static yapt.RMI.INode.RMI_PORT;
 import yapt.RMI.IPongGame;
 import yapt.RMI.ISession;
 import yapt.RMI.IYAPTServer;
@@ -40,6 +45,7 @@ public class LobbyPanel extends javax.swing.JPanel {
     private JPanel cards;
     private List<IPongGame> pongGames;
     private List<ISession> onlinePlayers;
+    private DefaultListModel players;
     //private ILobby lobby;
 
     /**
@@ -51,6 +57,24 @@ public class LobbyPanel extends javax.swing.JPanel {
 
         pongGames = new ArrayList<>();
         onlinePlayers = new ArrayList<>();
+        players = new DefaultListModel<String>();
+
+    }
+
+    public void setPongGames(List<IPongGame> pongGames) {
+        this.pongGames = pongGames;
+        this.lst_currentGames = new JList((ListModel) pongGames);
+    }
+
+    public void setOnlinePlayers(Collection<ISession> onlinePlayers) throws RemoteException {
+        for (ISession s : onlinePlayers) {
+          if(players.contains(s.getUsername())) System.out.println("List contains " + s.getUsername());
+          else {
+              System.out.println("List does not contain " + s.getUsername());
+              players.addElement(s.getUsername());
+          }
+        }
+        this.lst_onlinePlayers.setModel(players);
     }
 
     public void newMessage(String chatMessage) {
@@ -62,8 +86,10 @@ public class LobbyPanel extends javax.swing.JPanel {
         this.pongGames.add(game);
     }
 
-    public void addPlayer(ISession player) {
-        this.onlinePlayers.add(player);
+    public void addPlayer(ISession player) throws RemoteException {
+        this.players.addElement(player.getUsername());
+        this.lst_onlinePlayers.setModel(players);
+
     }
 
     public void removeGame(IPongGame game) {
@@ -74,8 +100,8 @@ public class LobbyPanel extends javax.swing.JPanel {
         this.onlinePlayers.remove(player);
     }
 
-    public void tryLogin(String serverAddress, String _username, YAPTPanel gamepanel, JPanel cards) throws RemoteException, NotBoundException, MalformedURLException {
-        this.username = _username;
+    public void tryLogin(String serverAddress, String username, YAPTPanel gamepanel, JPanel cards) throws RemoteException, NotBoundException, MalformedURLException {
+        this.username = username;
         this.gamePanel = gamepanel;
         this.cards = cards;
         //unwise
@@ -91,6 +117,7 @@ public class LobbyPanel extends javax.swing.JPanel {
         //lobby = (ILobby) remoteRegistry.lookup(ILobby.class.getSimpleName());
         //create RMI-stub for a ClientImpl
         //lobby = (ILobby) Naming.lookup(ILobby.class.getSimpleName());
+
         sessionImpl = new Session(username, server, gamepanel, this);
         final ISession sessionStub = (ISession) UnicastRemoteObject.exportObject(sessionImpl, 0);
 
@@ -256,4 +283,27 @@ public class LobbyPanel extends javax.swing.JPanel {
     private javax.swing.JList lst_onlinePlayers;
     // End of variables declaration//GEN-END:variables
 
+    private static class PlayerListModel extends DefaultListModel {
+
+        private ConcurrentLinkedDeque<String> dq = new ConcurrentLinkedDeque<String>();
+
+        public synchronized String poll() throws RemoteException {
+            String head = dq.poll();
+            if (head != null) {
+                removeElementAt(0);
+            }
+            return head;
+        }
+
+        public void setDq(ConcurrentLinkedDeque<String> _dq) {
+            this.dq = _dq;
+
+        }
+
+        public synchronized void offer(String item) {
+            dq.offer(item);
+            insertElementAt(item, getSize());
+            System.out.println("Added " + item + " to list");
+        }
+    }
 }
