@@ -115,7 +115,7 @@ public class PongGame extends Node<ISession> implements IPongGame, Serializable 
                         this.server.getLobby().unRegister(this.playerA);
                         this.server.getLobby().unRegister(this.playerB);
 
-                        //server.onMessage("gameStopped", this);
+                        server.onMessage("gameStopped", this);
                     }
                     break;
                 case "GameChatMessage":
@@ -196,5 +196,11 @@ public class PongGame extends Node<ISession> implements IPongGame, Serializable 
     public IPong getPong() {
         return this.pong;
     }
+    
+    @Override
+    public String getGameDetails() throws RemoteException{
+        return "Game number: " + this.getGameNumber() + " - " + this.getPlayerA().getUsername() + " vs " + this.getPlayerB().getUsername();
+    }
+
 
 }

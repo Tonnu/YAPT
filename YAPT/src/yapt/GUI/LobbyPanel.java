@@ -43,9 +43,8 @@ public class LobbyPanel extends javax.swing.JPanel {
     private YAPTPanel gamePanel;
     private CardLayout cl;
     private JPanel cards;
-    private List<IPongGame> pongGames;
     private List<ISession> onlinePlayers;
-    private DefaultListModel players;
+    private DefaultListModel players, pongGames;
     //private ILobby lobby;
 
     /**
@@ -55,24 +54,24 @@ public class LobbyPanel extends javax.swing.JPanel {
         initComponents();
         this.cl = cl;
 
-        pongGames = new ArrayList<>();
         onlinePlayers = new ArrayList<>();
         players = new DefaultListModel<String>();
+        pongGames = new DefaultListModel<String>();
 
     }
 
-    public void setPongGames(List<IPongGame> pongGames) {
-        this.pongGames = pongGames;
-        this.lst_currentGames = new JList((ListModel) pongGames);
+    public void setPongGames(List<IPongGame> _pongGames) {
+        this.lst_currentGames = new JList(pongGames);
     }
 
     public void setOnlinePlayers(Collection<ISession> onlinePlayers) throws RemoteException {
         for (ISession s : onlinePlayers) {
-          if(players.contains(s.getUsername())) System.out.println("List contains " + s.getUsername());
-          else {
-              System.out.println("List does not contain " + s.getUsername());
-              players.addElement(s.getUsername());
-          }
+            if (players.contains(s.getUsername())) {
+                System.out.println("List contains " + s.getUsername());
+            } else {
+                System.out.println("List does not contain " + s.getUsername());
+                players.addElement(s.getUsername());
+            }
         }
         this.lst_onlinePlayers.setModel(players);
     }
@@ -82,8 +81,12 @@ public class LobbyPanel extends javax.swing.JPanel {
         this.jTextArea1.append(chatMessage + "\n");
     }
 
-    public void addNewGame(IPongGame game) {
-        this.pongGames.add(game);
+    public void setGameList(List<String> newGameList) throws RemoteException {
+        pongGames.clear();
+        for (String _game : newGameList) {
+            pongGames.addElement(_game);
+        }
+        this.lst_currentGames.setModel(pongGames);
     }
 
     public void addPlayer(ISession player) throws RemoteException {
@@ -93,7 +96,7 @@ public class LobbyPanel extends javax.swing.JPanel {
     }
 
     public void removeGame(IPongGame game) {
-        this.pongGames.remove(game);
+        this.pongGames.removeElement("");
     }
 
     public void removePlayer(ISession player) {
@@ -283,27 +286,4 @@ public class LobbyPanel extends javax.swing.JPanel {
     private javax.swing.JList lst_onlinePlayers;
     // End of variables declaration//GEN-END:variables
 
-    private static class PlayerListModel extends DefaultListModel {
-
-        private ConcurrentLinkedDeque<String> dq = new ConcurrentLinkedDeque<String>();
-
-        public synchronized String poll() throws RemoteException {
-            String head = dq.poll();
-            if (head != null) {
-                removeElementAt(0);
-            }
-            return head;
-        }
-
-        public void setDq(ConcurrentLinkedDeque<String> _dq) {
-            this.dq = _dq;
-
-        }
-
-        public synchronized void offer(String item) {
-            dq.offer(item);
-            insertElementAt(item, getSize());
-            System.out.println("Added " + item + " to list");
-        }
-    }
 }

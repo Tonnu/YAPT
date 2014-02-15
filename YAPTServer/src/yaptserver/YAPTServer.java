@@ -123,6 +123,7 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
                         };
 
                         games.add(game);
+                        this.notifyAll("getGameList", games);
                         executor.execute(newGame);
                     }
                     break;
@@ -149,9 +150,11 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
                     games.remove((PongGame) _game);
 
                     _game = null;
+                    this.notifyAll("getGameList", games);
                     break;
                 case "someoneWon":
-                //end the game;
+                    //end the game;
+                    break;
                 default:
                     System.out.println("Got unknown message:" + message);
 

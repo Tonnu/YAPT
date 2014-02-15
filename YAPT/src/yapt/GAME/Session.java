@@ -11,6 +11,7 @@ import java.net.MalformedURLException;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.logging.Level;
@@ -131,11 +132,16 @@ public class Session extends Node<IPongGame> implements ISession {
     public void onMessage(String message, Object o) throws RemoteException {
         super.onMessage(message);
         switch (message) {
-            case "addPlayerToLobby":
+            case "getPlayerList":
                 lobbyPanel.setOnlinePlayers((Collection<ISession>)o);
                 break;
             case "getGameList":
-                lobbyPanel.setPongGames((List<IPongGame>) o);
+                List<String> gameStringList = new ArrayList<String>();
+                List<IPongGame> gameList = (List<IPongGame>)o;
+                for(IPongGame game: gameList){
+                    gameStringList.add(game.getGameDetails());
+                }
+                lobbyPanel.setGameList(gameStringList);
                 break;
             case "GetPublicChatMessage":
                 String chatMessage = (String) o;

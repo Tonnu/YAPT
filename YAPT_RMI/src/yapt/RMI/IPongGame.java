@@ -27,4 +27,9 @@ public interface IPongGame extends INode<ISession> {
     public int[] getPlayerScores() throws RemoteException;
     
     public void stop() throws RemoteException;
+
+    public String getGameDetails() throws RemoteException;
+    
+    
+
 }
