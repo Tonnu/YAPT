@@ -47,7 +47,7 @@ public class Bat implements IBat, Serializable {
         Graphics2D g2d = (Graphics2D) g;
         Rectangle rect = new Rectangle((int) location.getX(), (int) location.getY(), this.width, this.height);
         g2d.draw(rect);
-        g2d.setColor(Color.red);
+        g2d.setColor(Color.white);
         g2d.fill(rect);
     }
 

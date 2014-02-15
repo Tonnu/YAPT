@@ -152,6 +152,7 @@ public class LobbyPanel extends javax.swing.JPanel {
         lst_onlinePlayers = new javax.swing.JList();
         btn_joinGame = new javax.swing.JButton();
         btn_startGame = new javax.swing.JButton();
+        btn_Challenge = new javax.swing.JButton();
 
         jTextArea1.setColumns(20);
         jTextArea1.setRows(5);
@@ -192,7 +193,19 @@ public class LobbyPanel extends javax.swing.JPanel {
             }
         });
 
-        btn_startGame.setText("Start Game");
+        btn_startGame.setLabel("Start New Game");
+        btn_startGame.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btn_startGameActionPerformed(evt);
+            }
+        });
+
+        btn_Challenge.setText("Challenge Player");
+        btn_Challenge.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btn_ChallengeActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
@@ -204,32 +217,35 @@ public class LobbyPanel extends javax.swing.JPanel {
                     .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 1256, Short.MAX_VALUE)
                     .addComponent(jTextField1)
                     .addGroup(layout.createSequentialGroup()
-                        .addGap(177, 177, 177)
+                        .addGap(178, 178, 178)
                         .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 340, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(66, 66, 66)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addComponent(btn_startGame, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(btn_joinGame, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addGap(35, 35, 35)
+                        .addComponent(btn_startGame, javax.swing.GroupLayout.PREFERRED_SIZE, 143, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 340, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(184, 184, 184)))
                 .addContainerGap())
+            .addGroup(layout.createSequentialGroup()
+                .addGap(306, 306, 306)
+                .addComponent(btn_joinGame, javax.swing.GroupLayout.PREFERRED_SIZE, 131, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(btn_Challenge)
+                .addGap(286, 286, 286))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addContainerGap()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 373, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 373, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(37, 37, 37)
-                        .addComponent(btn_joinGame)
-                        .addGap(70, 70, 70)
-                        .addComponent(btn_startGame)))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 57, Short.MAX_VALUE)
+                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                        .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 373, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 373, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(btn_startGame))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 14, Short.MAX_VALUE)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(btn_joinGame)
+                    .addComponent(btn_Challenge))
+                .addGap(18, 18, 18)
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 268, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(10, 10, 10)
                 .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -248,15 +264,12 @@ public class LobbyPanel extends javax.swing.JPanel {
 
     private void btn_joinGameActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_joinGameActionPerformed
         try {
-            // TODO add your handling code here:
-            this.cl.show(cards, "Game");
-            this.gamePanel.start(sessionImpl, this, cards);
+            if (this.lst_currentGames.getSelectedIndex() != -1) {
+                this.cl.show(cards, "Game");
+                this.gamePanel.start(sessionImpl, this, cards);
+            }
 
-        } catch (RemoteException ex) {
-            Logger.getLogger(LobbyPanel.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (NotBoundException ex) {
-            Logger.getLogger(LobbyPanel.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (MalformedURLException ex) {
+        } catch (RemoteException | NotBoundException | MalformedURLException ex) {
             Logger.getLogger(LobbyPanel.class.getName()).log(Level.SEVERE, null, ex);
         }
     }//GEN-LAST:event_btn_joinGameActionPerformed
@@ -273,8 +286,24 @@ public class LobbyPanel extends javax.swing.JPanel {
         }
     }//GEN-LAST:event_jTextField1KeyReleased
 
+    private void btn_startGameActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_startGameActionPerformed
+        // TODO add your handling code here:
+        try {
+            this.cl.show(cards, "Game");
+            this.gamePanel.start(sessionImpl, this, cards);
+        } catch (RemoteException | NotBoundException | MalformedURLException ex) {
+            Logger.getLogger(LobbyPanel.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }//GEN-LAST:event_btn_startGameActionPerformed
+
+    private void btn_ChallengeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_ChallengeActionPerformed
+        // TODO add your handling code here:
+
+    }//GEN-LAST:event_btn_ChallengeActionPerformed
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton btn_Challenge;
     private javax.swing.JButton btn_joinGame;
     private javax.swing.JButton btn_startGame;
     private javax.swing.JScrollPane jScrollPane1;

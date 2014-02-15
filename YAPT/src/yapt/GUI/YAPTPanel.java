@@ -6,6 +6,7 @@
 package yapt.GUI;
 
 import java.awt.CardLayout;
+import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.event.KeyEvent;
 import java.net.MalformedURLException;
@@ -97,6 +98,14 @@ public class YAPTPanel extends javax.swing.JPanel {
     protected void paintComponent(Graphics g) {
         super.paintComponent(g); //To change body of generated methods, choose Tools | Templates.
         if (hasGameStarted()) {
+            g.drawRect(0, 0, this.getWidth(), this.getHeight());
+            g.setColor(Color.BLACK);
+            g.fillRect(0, 0, this.getWidth(), this.getHeight());
+            g.setColor(Color.WHITE);
+            for(int x = this.getHeight(); x > 0; x=x-10){
+                g.drawRect(this.getWidth() /2, x, 3, 5);
+                g.fillRect(this.getWidth() /2, x, 3, 5);
+            }
             sessionImpl.draw(g);
         }
     }
