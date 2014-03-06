@@ -19,12 +19,18 @@ public class Lobby extends Node<ISession> implements ILobby {
     public void register(ISession other) throws RemoteException {
         super.register(other); //To change body of generated methods, choose Tools | Templates.
         other.onMessage("GetPublicChatMessage", "Welcome to the server!");
-        
+        for (Iterator it = this.getOthers().iterator(); it.hasNext();) {
+            ISession s = (ISession) it.next();
+            if(s == null){
+                this.unRegister(s);
+            }
+        }
         this.notifyAll("getPlayerList", this.getOthers());
     }
 
     @Override
     public void unRegister(ISession other) throws RemoteException {
+        
         super.unRegister(other); //To change body of generated methods, choose Tools | Templates.
         this.notifyAll("getPlayerList", this.getOthers());
     }    

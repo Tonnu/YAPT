@@ -21,7 +21,7 @@ public class Bat implements IBat, Serializable {
     private Vector2f location;
     private final double velocity = 15;
     //private IPlayer owner;
-    private final int width = 10, height = 20;
+    private final int width = 10, height = 60;
     private final Rectangle batRectangle;
 
     public Bat(Vector2f location) {

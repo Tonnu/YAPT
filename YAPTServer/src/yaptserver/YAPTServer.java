@@ -41,10 +41,10 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
         return this.games;
     }
 
-    public YAPTServer() throws RemoteException {
+    public YAPTServer(ILobby lobby) throws RemoteException, AccessException, NotBoundException {
         this.games = Collections.synchronizedList(new ArrayList<PongGame>());
         this.playersInQue = Collections.synchronizedList(new ArrayList<ISession>());
-
+        this.lobby = lobby;
         executor = Executors.newFixedThreadPool(50);//50 threads
 
     }
@@ -66,9 +66,15 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
             super.onMessage(message);
             switch (message) {
                 case "Connected":
-                    Registry reg = LocateRegistry.getRegistry("localhost", RMI_PORT);
-                    this.lobby = (ILobby) reg.lookup(ILobby.class.getSimpleName());
                     this.lobby.register((ISession) o);
+                    break;
+                case "newGameWithOpponent":
+                    ISession[] _players = (ISession[]) o;
+                    int req = _players[1].recieveChallengeRequest(_players[0]);
+                    break;
+                case "acceptChallenge":
+                    _players = (ISession[]) o;
+                    createNewGame(_players[0], _players[1]);
                     break;
                 case "newLookingForGame":
                     //first check if there is someone else in que for a game
@@ -77,54 +83,10 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
                         playersInQue.add((ISession) o);
                     } else {
                         //there is someone else in que, match the first one in que up with this new player
-                        this.activeGames++;
-                        final ISession _tempA = playersInQue.get(0); //first one in que
+                        final ISession _tempA = playersInQue.get(0);
                         final ISession _tempB = (ISession) o; //new player LFG
 
-                        //remove players from que
-                        playersInQue.remove(_tempA);
-                        playersInQue.remove(_tempB);
-
-                        final PongGame game = new PongGame(this, _tempA, _tempB, activeGames);
-                        IPongGame gamestub = (IPongGame) UnicastRemoteObject.exportObject(game, 0);
-
-                        _tempA.onMessage("getPongGameInstance", (IPongGame) gamestub);
-                        _tempB.onMessage("getPongGameInstance", (IPongGame) gamestub);
-
-                        _tempA.onMessage("getPlayerNumber", 1);
-                        _tempB.onMessage("getPlayerNumber", 2);
-
-                        gamestub.register(_tempA);
-                        gamestub.register(_tempB);
-
-                        _tempA.register(gamestub);
-                        _tempB.register(gamestub);
-
-                        lobby.register(_tempB);
-                        lobby.register(_tempA);
-
-                        //we have to notify the second player first he has found a game
-                        //because player 1 has already made gameclient and a player + bat object
-                        //if you would first notify player a that player b has joined and pass the session b object to session a,
-                        //the game would start immediately, before player b has even made a player + bat object
-                        _tempB.onMessage("gameFound", _tempA);
-                        _tempA.onMessage("gameFound", _tempB);
-
-                        Runnable newGame = new Runnable() {
-                            @Override
-                            public void run() {
-                                try {
-                                    game.start();
-
-                                } catch (Exception ex) {
-                                    Logger.getLogger(YAPTServer.class.getName()).log(Level.SEVERE, null, ex);
-                                }
-                            }
-                        };
-
-                        games.add(game);
-                        this.notifyAll("getGameList", games);
-                        executor.execute(newGame);
+                        createNewGame(_tempA, _tempB);
                     }
                     break;
                 case "leftQue":
@@ -156,15 +118,66 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
                     //end the game;
                     break;
                 default:
-                    System.out.println("Got unknown message:" + message);
+                    System.out.println("Got unknown message: \n" + message);
 
             }
         } catch (RemoteException ex) {
             ex.printStackTrace();
-        } catch (NotBoundException ex) {
-            Logger.getLogger(YAPTServer.class.getName()).log(Level.SEVERE, null, ex);
         }
 
+    }
+
+    private void createNewGame(ISession _tempA, ISession _tempB) throws RemoteException {
+        this.activeGames++;
+
+        //remove players from que
+        if (playersInQue.contains(_tempA)) {
+            playersInQue.remove(_tempA);
+        }
+
+        if (playersInQue.contains(_tempB)) {
+            playersInQue.remove(_tempB);
+        }
+
+        final PongGame game = new PongGame(this, _tempA, _tempB, activeGames);
+        IPongGame gamestub = (IPongGame) UnicastRemoteObject.exportObject(game, 0);
+
+        _tempA.onMessage("getPongGameInstance", (IPongGame) gamestub);
+        _tempB.onMessage("getPongGameInstance", (IPongGame) gamestub);
+
+        _tempA.onMessage("getPlayerNumber", 1);
+        _tempB.onMessage("getPlayerNumber", 2);
+
+        gamestub.register(_tempA);
+        gamestub.register(_tempB);
+
+        _tempA.register(gamestub);
+        _tempB.register(gamestub);
+
+        lobby.register(_tempB);
+        lobby.register(_tempA);
+
+        //we have to notify the second player first he has found a game
+        //because player 1 has already made gameclient and a player + bat object
+        //if you would first notify player a that player b has joined and pass the session b object to session a,
+        //the game would start immediately, before player b has even made a player + bat object
+        _tempB.onMessage("gameFound", _tempA);
+        _tempA.onMessage("gameFound", _tempB);
+
+        Runnable newGame = new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    game.start();
+                } catch (Exception ex) {
+                    Logger.getLogger(YAPTServer.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        };
+
+        games.add(game);
+        this.notifyAll("getGameList", games);
+        executor.execute(newGame);
     }
 
     /**
@@ -174,10 +187,10 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
         //unwise
         System.setSecurityManager(null);
         try {
-            final YAPTServer server = new YAPTServer();
-            final IYAPTServer serverStub = (IYAPTServer) UnicastRemoteObject.exportObject(server, 0);
             final Lobby lobby = new Lobby();
             final ILobby lobbyStub = (ILobby) UnicastRemoteObject.exportObject(lobby, 0);
+            final YAPTServer server = new YAPTServer(lobby);
+            final IYAPTServer serverStub = (IYAPTServer) UnicastRemoteObject.exportObject(server, 0);
             final Registry registry = LocateRegistry.createRegistry(RMI_PORT);
             registry.rebind(IYAPTServer.class.getSimpleName(), serverStub);
             registry.rebind(ILobby.class.getSimpleName(), lobbyStub);

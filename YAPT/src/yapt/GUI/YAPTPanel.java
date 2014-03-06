@@ -7,7 +7,9 @@ package yapt.GUI;
 
 import java.awt.CardLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Graphics;
+import java.awt.Rectangle;
 import java.awt.event.KeyEvent;
 import java.net.MalformedURLException;
 import java.rmi.Naming;
@@ -20,6 +22,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import yapt.GAME.KeyListener;
 import yapt.GAME.Session;
@@ -41,6 +44,11 @@ public class YAPTPanel extends javax.swing.JPanel {
     private Thread gameloop;
     private JPanel cards;
     private LobbyPanel lobbyPanel;
+    private Rectangle gameField;
+
+    public Rectangle getGameField() {
+        return gameField;
+    }
 
     Runnable r = new Runnable() {
 
@@ -51,7 +59,7 @@ public class YAPTPanel extends javax.swing.JPanel {
                     //wait...
                     Thread.sleep(1);
                 } catch (InterruptedException ex) {
-                    //search canceld!
+                    //search canceled!
                 }
             }
 
@@ -79,6 +87,7 @@ public class YAPTPanel extends javax.swing.JPanel {
         this.setFocusable(true);
         this.requestFocusInWindow();
         this.addKeyListener(keyListener);
+        gameField = new Rectangle(0, 0, this.getWidth(), this.getHeight() / 2);
 
     }
 
@@ -88,6 +97,7 @@ public class YAPTPanel extends javax.swing.JPanel {
         this.requestFocusInWindow();
         this.addKeyListener(keyListener);
         this.cl = cl;
+        gameField = new Rectangle(0, 0, this.getWidth(), this.getHeight() / 2);
     }
 
     public KeyListener getKeyListener() {
@@ -98,13 +108,13 @@ public class YAPTPanel extends javax.swing.JPanel {
     protected void paintComponent(Graphics g) {
         super.paintComponent(g); //To change body of generated methods, choose Tools | Templates.
         if (hasGameStarted()) {
-            g.drawRect(0, 0, this.getWidth(), this.getHeight());
+            g.drawRect(0, 0, this.gameField.width, this.gameField.height);
             g.setColor(Color.BLACK);
-            g.fillRect(0, 0, this.getWidth(), this.getHeight());
+            g.fillRect(0, 0, this.gameField.width, this.gameField.height);
             g.setColor(Color.WHITE);
-            for(int x = this.getHeight(); x > 0; x=x-10){
-                g.drawRect(this.getWidth() /2, x, 3, 5);
-                g.fillRect(this.getWidth() /2, x, 3, 5);
+            for (int x = this.gameField.height; x > 0; x = x - 10) {
+                g.drawRect(this.gameField.width / 2, x, 3, 5);
+                g.fillRect(this.gameField.width / 2, x, 3, 5);
             }
             sessionImpl.draw(g);
         }
@@ -307,9 +317,10 @@ public class YAPTPanel extends javax.swing.JPanel {
     public void start(Session sessionImpl, LobbyPanel lobbypanel, JPanel cards) throws RemoteException, NotBoundException, MalformedURLException {
         this.sessionImpl = sessionImpl;
         this.lobbyPanel = lobbypanel;
+        gameField = new Rectangle(0, 0, this.getWidth(), this.getHeight() - (this.jTextArea1.getHeight() + this.jTextField1.getHeight() + 30));
         lobby = (ILobby) Naming.lookup(ILobby.class.getSimpleName());
         this.cards = cards;
-        if (!isLookingForGame() && (this.sessionImpl == null || !hasGameStarted())) {
+        if (!isLookingForGame() && (this.sessionImpl == null || !hasGameStarted()) && !isChallengeMode()) {
             this.sessionImpl.onMessage("pushLookingForGame", null);
             this.setFocusable(true);
             this.requestFocusInWindow();
@@ -318,13 +329,21 @@ public class YAPTPanel extends javax.swing.JPanel {
             gameloop.start();
 
             button1.setLabel("Disconnect...");
-        } else if (hasGameStarted()) {
+        } else if (hasGameStarted() && !isChallengeMode()) {
             System.out.println("Leaving game!");
             gameloop.interrupt();
             sessionImpl.onMessage("pushDisconnect", null);
 
             button1.setLabel("Find Game!");
             cl.show(lobbypanel, "Lobby");
+            sessionImpl.setChallengeMode(false);
+        } else if (isChallengeMode() && !isLookingForGame()) {
+            this.setFocusable(true);
+            this.requestFocusInWindow();
+
+            gameloop = new Thread(r);
+            gameloop.start();
+            button1.setLabel("Disconnect");
         } else if (isLookingForGame()) {
             System.out.println("Leaving que!");
             gameloop.interrupt();
@@ -334,5 +353,11 @@ public class YAPTPanel extends javax.swing.JPanel {
             cl.show(lobbypanel, "Lobby");
         }
     }
+
+    private boolean isChallengeMode() {
+        return sessionImpl.getChallengeMode();
+    }
+
+
 
 }

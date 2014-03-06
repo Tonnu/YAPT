@@ -6,27 +6,23 @@
 package yapt.GUI;
 
 import java.awt.CardLayout;
+import java.awt.Component;
 import java.awt.event.KeyEvent;
 import java.net.MalformedURLException;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.DefaultListModel;
 import javax.swing.JList;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.ListModel;
-import javax.swing.text.Position;
 import yapt.GAME.Session;
-import yapt.RMI.ILobby;
 import yapt.RMI.IPongGame;
 import yapt.RMI.ISession;
 import yapt.RMI.IYAPTServer;
@@ -40,6 +36,7 @@ public class LobbyPanel extends javax.swing.JPanel {
     private String username;
     private IYAPTServer server;
     private Session sessionImpl;
+
     private YAPTPanel gamePanel;
     private CardLayout cl;
     private JPanel cards;
@@ -58,6 +55,11 @@ public class LobbyPanel extends javax.swing.JPanel {
         players = new DefaultListModel<String>();
         pongGames = new DefaultListModel<String>();
 
+    }
+    
+    
+    public Session getSessionImpl() {
+        return sessionImpl;
     }
 
     public void setPongGames(List<IPongGame> _pongGames) {
@@ -298,6 +300,33 @@ public class LobbyPanel extends javax.swing.JPanel {
 
     private void btn_ChallengeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_ChallengeActionPerformed
         // TODO add your handling code here:
+        if (this.lst_onlinePlayers.getSelectedIndex() != -1) {
+            try {
+                ISession opponent = this.sessionImpl.getplayers((String) this.lst_onlinePlayers.getSelectedValue());
+                this.sessionImpl.challengePlayer(opponent);
+                this.cl.show(cards, "Game");
+                this.gamePanel.start(sessionImpl, this, cards);
+
+            } catch (RemoteException | NotBoundException | MalformedURLException ex) {
+                Logger.getLogger(LobbyPanel.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
+
+    public int spawnChallengeRequest() {
+        try {
+            int result = JOptionPane.showConfirmDialog((Component) null, "Someone has requested to playa game with you! Accept?",
+                    "alert", JOptionPane.OK_CANCEL_OPTION);
+            if (result == 1) {
+                this.cl.show(cards, "Game");
+                this.gamePanel.start(sessionImpl, this, cards);
+                return result;
+            }
+        } catch (RemoteException | NotBoundException | MalformedURLException ex) {
+            Logger.getLogger(LobbyPanel.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        return 0;
 
     }//GEN-LAST:event_btn_ChallengeActionPerformed
 

@@ -31,6 +31,7 @@ public class PongGame extends Node<ISession> implements IPongGame, Serializable 
     private boolean game_started = false, game_stopped;
     private final int game_id;
     private int leftScore, rightScore = 0;
+    private boolean game_paused = true;
 
     /**
      * *
@@ -49,7 +50,8 @@ public class PongGame extends Node<ISession> implements IPongGame, Serializable 
         this.server = server;
         this.playerA = A;
         this.playerB = B;
-        this.pong = new Pong(playerA.getPlayerRectangle(), playerB.getPlayerRectangle());
+
+        this.pong = new Pong(playerA.getPlayerRectangle(), playerB.getPlayerRectangle(), playerA.getClientRectangle());
         //this.start(); //start the game immediately, for now
     }
 
@@ -63,6 +65,7 @@ public class PongGame extends Node<ISession> implements IPongGame, Serializable 
     @Override
     public void start() {
         this.game_stopped = false;
+        this.game_paused = false;
         this.game_started = true;
         final Timer t = new Timer();
         t.schedule(new TimerTask() {
@@ -74,6 +77,7 @@ public class PongGame extends Node<ISession> implements IPongGame, Serializable 
                 } catch (RemoteException ex) {
                     t.cancel();
                     System.out.println("Canceled Run method for game!");
+                    ex.printStackTrace();
                 }
             }
 
@@ -84,43 +88,47 @@ public class PongGame extends Node<ISession> implements IPongGame, Serializable 
     public void onMessage(String message, Object o) throws RemoteException {
         System.out.println("Game_Started = " + this.game_started);
         if (this.game_started) {
-            super.onMessage(message);
+            if (!game_paused) {
+                super.onMessage(message);
 
-            switch (message) {
-                case "pushSessionUpdate":
-                    ISession _temp = (ISession) o;
+                switch (message) {
+                    case "pushSessionUpdate":
+                        ISession _temp = (ISession) o;
 
-                    if (_temp.getPlayerNumber() == 1) {
-                        //update player A
-                        this.playerA = _temp;
-                        //got update from player A, notify player B
-                        this.playerB.onMessage("getSessionUpdate", _temp.getPlayerPosition());
-                    } else {
-                        //update player B
-                        this.playerB = _temp;
-                        //got update from player B, notify player A
-                        this.playerA.onMessage("getSessionUpdate", _temp.getPlayerPosition());
-                    }
-                    break;
-                case "gameDisconnect":
-                    //this.stop();
-                    if (this.getPlayerB() != null && this.getPlayerA() != null) {
-                        //send disconnect to other player
-                        this.getPlayerB().onMessage("serverDisconnect", null);
-                        //this.unRegister(this.getPlayerB());
+                        if (_temp.getPlayerNumber() == 1) {
+                            //update player A
+                            this.playerA = _temp;
+                            //got update from player A, notify player B
+                            this.playerB.onMessage("getSessionUpdate", _temp.getPlayerPosition());
+                        } else {
+                            //update player B
+                            this.playerB = _temp;
+                            //got update from player B, notify player A
+                            this.playerA.onMessage("getSessionUpdate", _temp.getPlayerPosition());
+                        }
+                        break;
+                    case "gameDisconnect":
+                        //this.stop();
+                        if (this.getPlayerB() != null && this.getPlayerA() != null) {
+                            //send disconnect to other player
+                            this.getPlayerB().onMessage("serverDisconnect", null);
+                            //this.unRegister(this.getPlayerB());
 
-                        this.getPlayerA().onMessage("serverDisconnect", null);
-                        //this.unRegister(this.getPlayerA());
+                            this.getPlayerA().onMessage("serverDisconnect", null);
+                            //this.unRegister(this.getPlayerA());
 
-                        this.server.getLobby().unRegister(this.playerA);
-                        this.server.getLobby().unRegister(this.playerB);
+                            this.server.getLobby().unRegister(this.playerA);
+                            this.server.getLobby().unRegister(this.playerB);
 
-                        server.onMessage("gameStopped", this);
-                    }
-                    break;
-                case "GameChatMessage":
-                    this.notifyAll("GetGameChatMessage", o);
-                    break;
+                            server.onMessage("gameStopped", this);
+                        }
+                        break;
+                    case "GameChatMessage":
+                        this.notifyAll("GetGameChatMessage", o);
+                        break;
+                }
+            } else {
+                start();
             }
         }
 
@@ -128,11 +136,14 @@ public class PongGame extends Node<ISession> implements IPongGame, Serializable 
 
     @Override
     public void stop() {
-
         this.game_stopped = true;
         this.game_started = false;
         //this.server.onMessage("gameStopped", this);
 
+    }
+
+    public void pause() {
+        this.game_paused = true;
     }
 
     private void update() throws RemoteException {
@@ -147,11 +158,13 @@ public class PongGame extends Node<ISession> implements IPongGame, Serializable 
             if (pong.isOutOfLeftBound()) {
                 //server.onMessage("playerScore", 2);
                 rightScore++;
-                stop();
+                resetPong();
+                notifyAll("scoreUpdate", 2);
             } else if (pong.isOutOfRightBound()) {
                 //server.onMessage("playerScore", 1);
                 leftScore++;
-                stop();
+                resetPong();
+                notifyAll("scoreUpdate", 1);
             } else {
                 notifyAll("pongUpdate", this.pong.getPongCoordinates());
             }
@@ -196,11 +209,15 @@ public class PongGame extends Node<ISession> implements IPongGame, Serializable 
     public IPong getPong() {
         return this.pong;
     }
-    
+
     @Override
-    public String getGameDetails() throws RemoteException{
+    public String getGameDetails() throws RemoteException {
         return "Game number: " + this.getGameNumber() + " - " + this.getPlayerA().getUsername() + " vs " + this.getPlayerB().getUsername();
     }
 
+    private void resetPong() throws RemoteException {
+        this.pause();
+        this.pong = new Pong(this.playerA.getPlayerRectangle(), this.playerB.getPlayerRectangle(), this.playerA.getClientRectangle());
+    }
 
 }

@@ -27,19 +27,21 @@ public class Pong implements IPong, Serializable {
     private Rectangle rectangle, left, right, leftBound, rightBound, topBound, bottomBound;
     private int angle;
     private boolean firstMovement, goingStraight;
+    private Rectangle gamefield;
 
-    public Pong(Rectangle left, Rectangle right) {
+    public Pong(Rectangle left, Rectangle right, Rectangle gamefield) {
         this.location = new Vector2f(250, 150);
-        this.width = 50;
-        this.height = 50;
+        this.gamefield = gamefield;
+        this.width = 15;
+        this.height = 15;
         random = new Random();
         destination = new Vector2f(300, 150);
         this.rectangle = new Rectangle((int) location.x, (int) location.y, (int) width, (int) height);
         this.left = left;
         this.right = right;
         angle = 0;
-        topBound = new Rectangle(0, 0, 750, 10);
-        bottomBound = new Rectangle(0, 400, 750, 10);
+        topBound = new Rectangle(0, 0, gamefield.width, 10);
+        bottomBound = new Rectangle(0, gamefield.height, gamefield.width, 10);
         firstMovement = true;
     }
 
@@ -151,7 +153,7 @@ public class Pong implements IPong, Serializable {
 
     @Override
     public boolean isOutOfRightBound() {
-        return this.rectangle.x >= 750;
+        return this.rectangle.x >= this.gamefield.width;
 
     }
 

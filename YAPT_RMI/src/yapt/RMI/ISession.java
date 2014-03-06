@@ -36,4 +36,10 @@ public interface ISession extends INode<IPongGame> {
     
     public String getUsername() throws RemoteException;
     
+    public Rectangle getClientRectangle() throws RemoteException;
+    
+    public boolean getChallengeMode() throws RemoteException;
+
+    public int recieveChallengeRequest(ISession opponent) throws RemoteException;
+    
 }

@@ -13,6 +13,7 @@ import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -41,6 +42,7 @@ public class Session extends Node<IPongGame> implements ISession {
     private LobbyPanel lobbyPanel;
     private String username;
     private ILobby lobby;
+    private boolean challengeMode;
 
     /**
      * *
@@ -132,13 +134,20 @@ public class Session extends Node<IPongGame> implements ISession {
     public void onMessage(String message, Object o) throws RemoteException {
         super.onMessage(message);
         switch (message) {
+            case "scoreUpdate":
+                if ((int) o == 1) {
+                    this.getGameClient().getPlayer().score();
+                } else {
+                    this.getGameClient().getOpponent().score();
+                }
+                break;
             case "getPlayerList":
-                lobbyPanel.setOnlinePlayers((Collection<ISession>)o);
+                lobbyPanel.setOnlinePlayers((Collection<ISession>) o);
                 break;
             case "getGameList":
                 List<String> gameStringList = new ArrayList<String>();
-                List<IPongGame> gameList = (List<IPongGame>)o;
-                for(IPongGame game: gameList){
+                List<IPongGame> gameList = (List<IPongGame>) o;
+                for (IPongGame game : gameList) {
                     gameStringList.add(game.getGameDetails());
                 }
                 lobbyPanel.setGameList(gameStringList);
@@ -199,10 +208,10 @@ public class Session extends Node<IPongGame> implements ISession {
                 this.game.setOpponent(new Player("Other", _temp)); //needed for drawing
                 if (this.getPlayerNumber() == 1) {
                     //spawn at the left side
-                    this.game.getPlayer().setBatCoordinates(new Vector2f(10, 150));
+                    this.game.getPlayer().setBatCoordinates(new Vector2f(0, 150));
                 } else {
                     //spawn at right side
-                    this.game.getPlayer().setBatCoordinates(new Vector2f(750, 150));
+                    this.game.getPlayer().setBatCoordinates(new Vector2f((float) ((float) this.gamePanel.getWidth() - this.game.getPlayer().getBat().getRectangle().getWidth()), 150));
                 }
 
                 break;
@@ -217,6 +226,11 @@ public class Session extends Node<IPongGame> implements ISession {
                 break;
             case "pushDisconnect":
                 pongGame.onMessage("gameDisconnect", this);
+                lookingForGame = false;
+                gameInterrupted = true;
+                gameStarted = false;
+                break;
+            case "cancelChallengeRequest":
                 lookingForGame = false;
                 gameInterrupted = true;
                 gameStarted = false;
@@ -261,4 +275,60 @@ public class Session extends Node<IPongGame> implements ISession {
     public int getGamePongNumber() {
         return this.pongGameNumber;
     }
+
+    @Override
+    public Rectangle getClientRectangle() throws RemoteException {
+        return this.gamePanel.getGameField();
+
+    }
+
+    public ISession getplayers(String _username) throws RemoteException {
+        for (Iterator it = this.lobby.getOthers().iterator(); it.hasNext();) {
+            ISession s = (ISession) it.next();
+            if (s.getUsername().equals(_username)) {
+                return s;
+            }
+        }
+        return null;
+    }
+
+    public void challengePlayer(ISession _opponent) {
+        gameInterrupted = false;
+        challengeMode = true;
+        if (!lookingForGame) {
+            try {
+                if (this.lobby.getOthers().contains(_opponent)) {
+                    lookingForGame = false;
+                    ISession[] _players = {this, _opponent};
+                    server.onMessage("newGameWithOpponent", _players);
+                } else {
+                    System.out.println("Opponent not found!");
+                }
+            } catch (RemoteException ex) {
+                Logger.getLogger(Session.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
+
+    @Override
+    public int recieveChallengeRequest(ISession _opponent) throws RemoteException {
+        if (lobbyPanel.spawnChallengeRequest() == 1) {
+            lookingForGame = false;
+            gameInterrupted = false;
+            challengeMode = true;
+            ISession[] _players = {this, _opponent};
+            server.onMessage("acceptChallenge", _players);
+        }
+        return 0;
+    }
+
+    @Override
+    public boolean getChallengeMode() {
+        return challengeMode;
+    }
+
+    public void setChallengeMode(boolean challengeMode) {
+        this.challengeMode = challengeMode;
+    }
+
 }

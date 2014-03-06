@@ -9,7 +9,11 @@ import java.awt.BorderLayout;
 import java.awt.CardLayout;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.net.MalformedURLException;
+import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.util.logging.Level;
@@ -20,6 +24,8 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import yapt.RMI.ILobby;
+import yapt.RMI.ISession;
 import yapt.RMI.IYAPTServer;
 
 /**
@@ -30,13 +36,30 @@ public class ClientGUI {
 
     public static String USERNAME;
     private IYAPTServer server;
+    private static ISession SESSION;
 
     public static void main(String args[]) {
         final String serverAddress = (args.length < 1) ? "localhost" : args[0];
         //final String serverAddress = "localhost";
         //final String serverAddress = "188.226.136.184";
         final JFrame window = new JFrame();
-        window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        window.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        window.addWindowListener(new WindowAdapter() {
+
+            @Override
+            public void windowClosing(WindowEvent we) {
+                try {
+                    ILobby lobby = (ILobby) Naming.lookup(ILobby.class.getSimpleName());
+                    lobby.unRegister(SESSION);
+                } catch (NotBoundException | MalformedURLException | RemoteException ex) {
+                    Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
+                } finally {
+                    System.exit(1);
+                }
+
+            }
+
+        });
         window.setPreferredSize(new Dimension(1280, 760));
         final CardLayout cl = new CardLayout();
         final JPanel cards = new JPanel(cl);
@@ -68,6 +91,7 @@ public class ClientGUI {
                         lobby.tryLogin(serverAddress, USERNAME, gamePanel, cards);
                         control.setVisible(false);
                         cl.show(cards, "Lobby");
+                        SESSION = lobby.getSessionImpl();
                     }
                 } catch (RemoteException | NotBoundException ex) {
                     control.setVisible(true);
