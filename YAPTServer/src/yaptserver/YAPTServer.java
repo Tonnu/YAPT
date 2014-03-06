@@ -32,17 +32,18 @@ import yapt.RMI.Node;
 public class YAPTServer extends Node<ISession> implements IYAPTServer {
 
     private int activeGames = 0;
-    private List<PongGame> games;
+    private List<IPongGame> games;
     private List<ISession> playersInQue;
     private ExecutorService executor;
     private ILobby lobby;
 
-    public List<PongGame> getCurrentGames() throws RemoteException {
+    @Override
+    public Collection<IPongGame> getCurrentGames() throws RemoteException {
         return this.games;
     }
 
     public YAPTServer(ILobby lobby) throws RemoteException, AccessException, NotBoundException {
-        this.games = Collections.synchronizedList(new ArrayList<PongGame>());
+        this.games = Collections.synchronizedList(new ArrayList<IPongGame>());
         this.playersInQue = Collections.synchronizedList(new ArrayList<ISession>());
         this.lobby = lobby;
         executor = Executors.newFixedThreadPool(50);//50 threads
@@ -58,6 +59,13 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
     public void register(ISession other) throws RemoteException {
         super.register(other);
         //other.register(this);
+    }
+
+    @Override
+    public void unRegister(ISession other) throws RemoteException {
+        System.out.format("Unregistering %s @ server", other.getUsername());
+        this.lobby.unRegister(other);
+        super.unRegister(other);
     }
 
     @Override
@@ -114,9 +122,6 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
                     _game = null;
                     this.notifyAll("getGameList", games);
                     break;
-                case "someoneWon":
-                    //end the game;
-                    break;
                 default:
                     System.out.println("Got unknown message: \n" + message);
 
@@ -126,6 +131,7 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
         }
 
     }
+
 
     private void createNewGame(ISession _tempA, ISession _tempB) throws RemoteException {
         this.activeGames++;
@@ -153,9 +159,6 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
 
         _tempA.register(gamestub);
         _tempB.register(gamestub);
-
-        lobby.register(_tempB);
-        lobby.register(_tempA);
 
         //we have to notify the second player first he has found a game
         //because player 1 has already made gameclient and a player + bat object

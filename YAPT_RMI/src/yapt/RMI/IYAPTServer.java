@@ -6,6 +6,7 @@
 package yapt.RMI;
 
 import java.rmi.RemoteException;
+import java.util.Collection;
 
 /**
  *
@@ -14,4 +15,6 @@ import java.rmi.RemoteException;
 public interface IYAPTServer extends INode<ISession> {
 
     public ILobby getLobby() throws RemoteException;
+    
+    public Collection<IPongGame> getCurrentGames() throws RemoteException;
 }

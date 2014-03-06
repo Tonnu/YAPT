@@ -263,15 +263,29 @@ public class LobbyPanel extends javax.swing.JPanel {
         //jTextArea1.append("" + evt.getKeyCode());       
     }//GEN-LAST:event_jTextField1KeyTyped
 
+    /**
+     * Attempts to join the selected game as a spectator.
+     *
+     * @param evt
+     */
     private void btn_joinGameActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_joinGameActionPerformed
-        try {
-            if (this.lst_currentGames.getSelectedIndex() != -1) {
+        if (this.lst_currentGames.getSelectedIndex() != -1) {
+            try {
                 this.cl.show(cards, "Game");
-                this.gamePanel.start(sessionImpl, this, cards);
+                IPongGame spectatingGame = null;
+                for (IPongGame game : this.server.getCurrentGames()) {
+                    if (game.getGameDetails().equals(this.lst_currentGames.getSelectedValue())) {
+                        spectatingGame = game;
+                        System.out.println("found game");
+                        break;
+                    }
+                }
+                if (spectatingGame != null) {
+                    this.gamePanel.joinGameAsSpectator(sessionImpl, spectatingGame);
+                }
+            } catch (RemoteException ex) {
+                Logger.getLogger(LobbyPanel.class.getName()).log(Level.SEVERE, null, ex);
             }
-
-        } catch (RemoteException | NotBoundException | MalformedURLException ex) {
-            Logger.getLogger(LobbyPanel.class.getName()).log(Level.SEVERE, null, ex);
         }
     }//GEN-LAST:event_btn_joinGameActionPerformed
 

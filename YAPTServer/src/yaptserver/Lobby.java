@@ -17,23 +17,19 @@ public class Lobby extends Node<ISession> implements ILobby {
 
     @Override
     public void register(ISession other) throws RemoteException {
+        System.out.format("Regstering %s @ lobby\n", other.getUsername());
         super.register(other); //To change body of generated methods, choose Tools | Templates.
         other.onMessage("GetPublicChatMessage", "Welcome to the server!");
-        for (Iterator it = this.getOthers().iterator(); it.hasNext();) {
-            ISession s = (ISession) it.next();
-            if(s == null){
-                this.unRegister(s);
-            }
-        }
         this.notifyAll("getPlayerList", this.getOthers());
     }
 
     @Override
     public void unRegister(ISession other) throws RemoteException {
-        
+        System.out.format("Unregistering %s @ lobby\n", other.getUsername());
         super.unRegister(other); //To change body of generated methods, choose Tools | Templates.
+        System.out.println("All players in lobby after unregestring:\n" + this.getOthers().size());
         this.notifyAll("getPlayerList", this.getOthers());
-    }    
+    }
 
     @Override
     public void onMessage(String message, Object o) throws RemoteException {

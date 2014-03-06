@@ -5,9 +5,6 @@
         <group>
             <file>file:/C:/Users/Toon/Documents/NetBeansProjects/yapt/YAPT_RMI/src/yapt/RMI/IPongGame.java</file>
         </group>
-        <group name="YAPT">
-            <file>file:/C:/Users/Toon/Documents/NetBeansProjects/yapt/YAPT_RMI/src/yapt/RMI/INode.java</file>
-            <file>file:/C:/Users/Toon/Documents/NetBeansProjects/yapt/YAPT_RMI/src/yapt/RMI/Node.java</file>
-        </group>
+        <group name="YAPT"/>
     </open-files>
 </project-private>

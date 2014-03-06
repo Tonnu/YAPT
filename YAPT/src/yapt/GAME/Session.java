@@ -43,6 +43,15 @@ public class Session extends Node<IPongGame> implements ISession {
     private String username;
     private ILobby lobby;
     private boolean challengeMode;
+    private boolean isSpectating = false;
+
+    public void setIsSpectating(boolean isSpectating) {
+        this.isSpectating = isSpectating;
+    }
+
+    public boolean isIsSpectating() {
+        return isSpectating;
+    }
 
     /**
      * *
@@ -58,7 +67,6 @@ public class Session extends Node<IPongGame> implements ISession {
             this.pongGameNumber++;
             this.server = server;
             lookingForGame = false;
-            game = new GameClient(this);
             this.gamePanel = gamepanel;
             this.lobbyPanel = lobbyPanel;
             this.username = username;
@@ -134,6 +142,20 @@ public class Session extends Node<IPongGame> implements ISession {
     public void onMessage(String message, Object o) throws RemoteException {
         super.onMessage(message);
         switch (message) {
+            case "spectating":
+
+                pongGame = (IPongGame) o;
+                pongGame.register(this);
+
+                game = new GameClient(this,pongGame.getPlayerA(), pongGame.getPlayerB());
+
+                System.out.println("got spectating!");
+                this.isSpectating = true;
+                this.gameStarted = true;
+                this.gameInterrupted = false;
+                this.lookingForGame = false;
+
+                break;
             case "scoreUpdate":
                 if ((int) o == 1) {
                     this.getGameClient().getPlayer().score();
@@ -168,7 +190,9 @@ public class Session extends Node<IPongGame> implements ISession {
                 break;
             case "pongUpdate":
                 Vector2f _tempcoords = (Vector2f) o;
-                this.game.setPongCoordinates(_tempcoords); //needed for drawing
+                if (this.game != null) {
+                    this.game.setPongCoordinates(_tempcoords); //needed for drawing
+                }
                 break;
             case "pushBatUpdate":
                 if (!gameInterrupted) {
@@ -186,6 +210,23 @@ public class Session extends Node<IPongGame> implements ISession {
                     this.game.getOpponent().setBatCoordinates(_opponentPosition); //needed for drawing 
                 }
                 break;
+            case "spectatorUpdate":
+                if (isSpectating && !gameInterrupted) {
+                    System.out.println("got spectator update");
+                    ISession _aPlayer = (ISession) o;
+                    if (_aPlayer != null) {
+                        if (this.getPlayerNumber() == _aPlayer.getPlayerNumber()) {
+                            this.game.getPlayer().setBatCoordinates(_aPlayer.getPlayerPosition());
+                        } else {
+                            if (this.game.getOpponent() != null) {
+                                this.game.getOpponent().setBatCoordinates(_aPlayer.getPlayerPosition());
+                            }
+                        }
+                    } else {
+                        System.out.println("Spectator ISession equals null");
+                    }
+                }
+                break;
             case "getPongGameNumber":
                 this.setGamePongNumber((int) o);
                 break;
@@ -200,6 +241,7 @@ public class Session extends Node<IPongGame> implements ISession {
                 }
                 break;
             case "gameFound":
+                game = new GameClient(this, false);
                 gameStarted = true;
                 lookingForGame = false;
                 gameInterrupted = false;
@@ -295,6 +337,12 @@ public class Session extends Node<IPongGame> implements ISession {
     public void challengePlayer(ISession _opponent) {
         gameInterrupted = false;
         challengeMode = true;
+        try {
+            game = new GameClient(this, true);
+        } catch (RemoteException ex) {
+            Logger.getLogger(Session.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
         if (!lookingForGame) {
             try {
                 if (this.lobby.getOthers().contains(_opponent)) {
@@ -313,7 +361,7 @@ public class Session extends Node<IPongGame> implements ISession {
     @Override
     public int recieveChallengeRequest(ISession _opponent) throws RemoteException {
         if (lobbyPanel.spawnChallengeRequest() == 0) {
-            System.out.println("Session recieved positive challenge request");
+            game = new GameClient(this, true);
             lookingForGame = false;
             gameInterrupted = false;
             challengeMode = true;

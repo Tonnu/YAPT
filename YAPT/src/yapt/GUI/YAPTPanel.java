@@ -28,6 +28,7 @@ import yapt.GAME.KeyListener;
 import yapt.GAME.Session;
 import yapt.RMI.ILobby;
 import static yapt.RMI.INode.RMI_PORT;
+import yapt.RMI.IPongGame;
 import yapt.RMI.ISession;
 import yapt.RMI.IYAPTServer;
 
@@ -44,7 +45,7 @@ public class YAPTPanel extends javax.swing.JPanel {
     private Thread gameloop;
     private JPanel cards;
     private LobbyPanel lobbyPanel;
-    private Rectangle gameField;
+    public static Rectangle gameField;
 
     public Rectangle getGameField() {
         return gameField;
@@ -72,11 +73,16 @@ public class YAPTPanel extends javax.swing.JPanel {
                     repaint();
                     update();
                 }
+
             };
 
             t.schedule(tt, 1000, 33); //30 FPS TODO need to synch with server ponggame
         }
     };
+
+    public boolean isSpecating() {
+        return this.sessionImpl.isIsSpectating();
+    }
     private ILobby lobby;
 
     /**
@@ -108,14 +114,7 @@ public class YAPTPanel extends javax.swing.JPanel {
     protected void paintComponent(Graphics g) {
         super.paintComponent(g); //To change body of generated methods, choose Tools | Templates.
         if (hasGameStarted()) {
-            g.drawRect(0, 0, this.gameField.width, this.gameField.height);
-            g.setColor(Color.BLACK);
-            g.fillRect(0, 0, this.gameField.width, this.gameField.height);
-            g.setColor(Color.WHITE);
-            for (int x = this.gameField.height; x > 0; x = x - 10) {
-                g.drawRect(this.gameField.width / 2, x, 3, 5);
-                g.fillRect(this.gameField.width / 2, x, 3, 5);
-            }
+
             sessionImpl.draw(g);
         }
     }
@@ -138,6 +137,7 @@ public class YAPTPanel extends javax.swing.JPanel {
 
     public boolean hasGameStarted() {
         if (sessionImpl != null) {
+
             return sessionImpl.gameStarted;
         }
         return false;
@@ -314,9 +314,38 @@ public class YAPTPanel extends javax.swing.JPanel {
         this.jTextArea1.append(chatMessage + "\n");
     }
 
+    public void joinGameAsSpectator(Session sessionImpl, IPongGame game) throws RemoteException {
+        this.sessionImpl = sessionImpl;
+
+        System.out.println("Has game started is: " + this.sessionImpl.gameStarted);
+        this.setFocusable(true);
+        this.requestFocusInWindow();
+
+        gameloop = new Thread(r);
+        gameloop.start();
+
+        button1.setLabel("Disconnect...");
+        this.sessionImpl.onMessage("spectating", game);
+
+    }
+
+    /**
+     * Starts or stops a game depending on the current status of the Session. It
+     * can initiate a Looking For Game request or Challenge another Player to a
+     * game. When Disconnecting all players participating or spectating in the
+     * game are returned to the lobby.
+     *
+     * @param sessionImpl
+     * @param lobbypanel
+     * @param cards
+     * @throws RemoteException
+     * @throws NotBoundException
+     * @throws MalformedURLException
+     */
     public void start(Session sessionImpl, LobbyPanel lobbypanel, JPanel cards) throws RemoteException, NotBoundException, MalformedURLException {
         this.sessionImpl = sessionImpl;
         this.lobbyPanel = lobbypanel;
+        sessionImpl.setIsSpectating(false);
         gameField = new Rectangle(0, 0, this.getWidth(), this.getHeight() - (this.jTextArea1.getHeight() + this.jTextField1.getHeight() + 30));
         this.cards = cards;
         if (lobby == null) {

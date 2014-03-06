@@ -94,7 +94,7 @@ public class PongGame extends Node<ISession> implements IPongGame, Serializable 
                 switch (message) {
                     case "pushSessionUpdate":
                         ISession _temp = (ISession) o;
-
+                        this.notifyAll("spectatorUpdate", _temp);
                         if (_temp.getPlayerNumber() == 1) {
                             //update player A
                             this.playerA = _temp;
@@ -112,15 +112,15 @@ public class PongGame extends Node<ISession> implements IPongGame, Serializable 
                         if (this.getPlayerB() != null && this.getPlayerA() != null) {
                             //send disconnect to other player
                             this.getPlayerB().onMessage("serverDisconnect", null);
-                            //this.unRegister(this.getPlayerB());
+                            this.unRegister(this.getPlayerB());
 
                             this.getPlayerA().onMessage("serverDisconnect", null);
-                            //this.unRegister(this.getPlayerA());
+                            this.unRegister(this.getPlayerA());
 
-                            this.server.getLobby().unRegister(this.playerA);
-                            this.server.getLobby().unRegister(this.playerB);
-
+                            //this.server.getLobby().unRegister(this.playerA);
+                            //this.server.getLobby().unRegister(this.playerB);
                             server.onMessage("gameStopped", this);
+                            stop();
                         }
                         break;
                     case "GameChatMessage":
@@ -148,8 +148,7 @@ public class PongGame extends Node<ISession> implements IPongGame, Serializable 
 
     private void update() throws RemoteException {
         if (game_started) {
-
-            //pass player rectangles to pong
+           //pass player rectangles to pong
             this.pong.update(this.playerA.getPlayerRectangle(), this.playerB.getPlayerRectangle());
             this.notifyAll("pongUpdate", this.pong.getPongCoordinates());
 
@@ -169,19 +168,18 @@ public class PongGame extends Node<ISession> implements IPongGame, Serializable 
                 notifyAll("pongUpdate", this.pong.getPongCoordinates());
             }
 
-            if (leftScore == 5) {
-                server.onMessage("someoneWon", 1);
-                stop();
-            } else if (rightScore == 5) {
-                server.onMessage("someoneWon", 2);
+            if (leftScore == 5 || rightScore == 5) {
+                server.onMessage("gameStopped", this);
+                this.unRegister(playerA);
+                this.unRegister(playerB);
                 stop();
             }
 
         } else {
-            this.server.getLobby().unRegister(this.playerA);
-            this.server.getLobby().unRegister(this.playerB);
+            //this.server.getLobby().unRegister(this.playerA);
+            //this.server.getLobby().unRegister(this.playerB);
 
-            throw new RemoteException();
+            //throw new RemoteException();
         }
     }
 

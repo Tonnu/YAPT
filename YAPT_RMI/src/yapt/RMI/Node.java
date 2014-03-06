@@ -22,12 +22,19 @@ public abstract class Node<T extends INode> implements INode<T> {
 
     @Override
     public void register(T other) throws RemoteException {
+        System.out.println("Amount of others: " + others.size());
         others.add(other);
     }
 
     @Override
     public void unRegister(T other) throws RemoteException {
-        others.remove(other);
+        if (others.contains(other)) {
+            System.out.println("Found the object to unregister. Removing from 'others' list.");
+            others.remove(other);
+
+        }else{
+            System.out.println("Didn't find the object to remove!");
+        }
     }
 
     @Override
@@ -43,14 +50,16 @@ public abstract class Node<T extends INode> implements INode<T> {
     @Override
     public void notifyAll(String message, Object o) throws RemoteException {
         for (T other : others) {
-            if(o != null)
+            if (o != null) {
                 other.onMessage(message, o);
-            else other.onMessage(message);
+            } else {
+                other.onMessage(message);
+            }
         }
     }
-    
+
     @Override
-    public Collection getOthers(){
+    public Collection getOthers() {
         return others;
     }
 

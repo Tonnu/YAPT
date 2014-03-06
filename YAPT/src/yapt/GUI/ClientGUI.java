@@ -49,8 +49,8 @@ public class ClientGUI {
             @Override
             public void windowClosing(WindowEvent we) {
                 try {
-                    ILobby lobby = (ILobby) Naming.lookup(ILobby.class.getSimpleName());
-                    lobby.unRegister(SESSION);
+                    IYAPTServer server = (IYAPTServer) Naming.lookup(IYAPTServer.class.getSimpleName());
+                    server.unRegister(SESSION);
                 } catch (NotBoundException | MalformedURLException | RemoteException ex) {
                     Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
                 } finally {
