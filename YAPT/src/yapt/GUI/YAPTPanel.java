@@ -318,8 +318,11 @@ public class YAPTPanel extends javax.swing.JPanel {
         this.sessionImpl = sessionImpl;
         this.lobbyPanel = lobbypanel;
         gameField = new Rectangle(0, 0, this.getWidth(), this.getHeight() - (this.jTextArea1.getHeight() + this.jTextField1.getHeight() + 30));
-        lobby = (ILobby) Naming.lookup(ILobby.class.getSimpleName());
         this.cards = cards;
+        if (lobby == null) {
+            lobby = (ILobby) Naming.lookup(ILobby.class.getSimpleName());
+        }
+
         if (!isLookingForGame() && (this.sessionImpl == null || !hasGameStarted()) && !isChallengeMode()) {
             this.sessionImpl.onMessage("pushLookingForGame", null);
             this.setFocusable(true);
@@ -357,7 +360,5 @@ public class YAPTPanel extends javax.swing.JPanel {
     private boolean isChallengeMode() {
         return sessionImpl.getChallengeMode();
     }
-
-
 
 }

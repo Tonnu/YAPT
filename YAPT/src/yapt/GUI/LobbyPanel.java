@@ -56,8 +56,7 @@ public class LobbyPanel extends javax.swing.JPanel {
         pongGames = new DefaultListModel<String>();
 
     }
-    
-    
+
     public Session getSessionImpl() {
         return sessionImpl;
     }
@@ -298,15 +297,19 @@ public class LobbyPanel extends javax.swing.JPanel {
         }
     }//GEN-LAST:event_btn_startGameActionPerformed
 
+    /**
+     * Challenges the selected player to a game. The opponent will recieve a
+     * popup containing a request for a new pong game.
+     *
+     * @param evt
+     */
     private void btn_ChallengeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_ChallengeActionPerformed
-        // TODO add your handling code here:
         if (this.lst_onlinePlayers.getSelectedIndex() != -1) {
             try {
                 ISession opponent = this.sessionImpl.getplayers((String) this.lst_onlinePlayers.getSelectedValue());
                 this.sessionImpl.challengePlayer(opponent);
                 this.cl.show(cards, "Game");
                 this.gamePanel.start(sessionImpl, this, cards);
-
             } catch (RemoteException | NotBoundException | MalformedURLException ex) {
                 Logger.getLogger(LobbyPanel.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -315,12 +318,17 @@ public class LobbyPanel extends javax.swing.JPanel {
 
     public int spawnChallengeRequest() {
         try {
-            int result = JOptionPane.showConfirmDialog((Component) null, "Someone has requested to playa game with you! Accept?",
+            int result = JOptionPane.showConfirmDialog((Component) null, "Someone has requested to play a game with you! Accept?",
                     "alert", JOptionPane.OK_CANCEL_OPTION);
-            if (result == 1) {
+            System.out.println("Dialog result was " + result);
+            if (result == 0) {
+                System.out.println("Accepted challenge");
                 this.cl.show(cards, "Game");
                 this.gamePanel.start(sessionImpl, this, cards);
                 return result;
+            } else {
+                System.out.println("Did not accept challenge");
+
             }
         } catch (RemoteException | NotBoundException | MalformedURLException ex) {
             Logger.getLogger(LobbyPanel.class.getName()).log(Level.SEVERE, null, ex);

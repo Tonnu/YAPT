@@ -312,7 +312,8 @@ public class Session extends Node<IPongGame> implements ISession {
 
     @Override
     public int recieveChallengeRequest(ISession _opponent) throws RemoteException {
-        if (lobbyPanel.spawnChallengeRequest() == 1) {
+        if (lobbyPanel.spawnChallengeRequest() == 0) {
+            System.out.println("Session recieved positive challenge request");
             lookingForGame = false;
             gameInterrupted = false;
             challengeMode = true;
