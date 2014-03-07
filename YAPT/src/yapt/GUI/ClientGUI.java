@@ -95,9 +95,6 @@ public class ClientGUI {
                     }
                 } catch (RemoteException | NotBoundException ex) {
                     control.setVisible(true);
-                    username.setText("Server timed out. Try again later.");
-                    ex.printStackTrace();
-                    txtarea.append(ex.getMessage());
                 } catch (MalformedURLException ex) {
                     Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
                 }

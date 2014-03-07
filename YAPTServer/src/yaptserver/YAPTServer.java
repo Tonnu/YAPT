@@ -75,6 +75,7 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
             switch (message) {
                 case "Connected":
                     this.lobby.register((ISession) o);
+                    this.notifyAll("getGameList", this.games);
                     break;
                 case "newGameWithOpponent":
                     ISession[] _players = (ISession[]) o;
@@ -93,7 +94,7 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
                         //there is someone else in que, match the first one in que up with this new player
                         final ISession _tempA = playersInQue.get(0);
                         final ISession _tempB = (ISession) o; //new player LFG
-
+                        System.out.format("Creating game with %s vs %s\n", _tempA.getUsername(), _tempB.getUsername());
                         createNewGame(_tempA, _tempB);
                     }
                     break;
@@ -118,9 +119,9 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
                 case "gameStopped":
                     IPongGame _game = (IPongGame) o;
                     games.remove((PongGame) _game);
-
                     _game = null;
                     this.notifyAll("getGameList", games);
+                    this.notifyAll("getPlayerList", this.lobby.getOthers());
                     break;
                 default:
                     System.out.println("Got unknown message: \n" + message);
@@ -131,7 +132,6 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
         }
 
     }
-
 
     private void createNewGame(ISession _tempA, ISession _tempB) throws RemoteException {
         this.activeGames++;
@@ -145,27 +145,28 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
             playersInQue.remove(_tempB);
         }
 
-        final PongGame game = new PongGame(this, _tempA, _tempB, activeGames);
-        IPongGame gamestub = (IPongGame) UnicastRemoteObject.exportObject(game, 0);
-
-        _tempA.onMessage("getPongGameInstance", (IPongGame) gamestub);
-        _tempB.onMessage("getPongGameInstance", (IPongGame) gamestub);
-
         _tempA.onMessage("getPlayerNumber", 1);
         _tempB.onMessage("getPlayerNumber", 2);
-
-        gamestub.register(_tempA);
-        gamestub.register(_tempB);
-
-        _tempA.register(gamestub);
-        _tempB.register(gamestub);
-
+        
         //we have to notify the second player first he has found a game
         //because player 1 has already made gameclient and a player + bat object
         //if you would first notify player a that player b has joined and pass the session b object to session a,
         //the game would start immediately, before player b has even made a player + bat object
         _tempB.onMessage("gameFound", _tempA);
         _tempA.onMessage("gameFound", _tempB);
+        
+        final PongGame game = new PongGame(this, _tempA, _tempB, activeGames);
+        IPongGame gamestub = (IPongGame) UnicastRemoteObject.exportObject(game, 0);
+
+        _tempA.onMessage("getPongGameInstance", (IPongGame) gamestub);
+        _tempB.onMessage("getPongGameInstance", (IPongGame) gamestub);
+
+
+        gamestub.register(_tempA);
+        gamestub.register(_tempB);
+
+        _tempA.register(gamestub);
+        _tempB.register(gamestub);
 
         Runnable newGame = new Runnable() {
             @Override

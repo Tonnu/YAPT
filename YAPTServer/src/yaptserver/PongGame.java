@@ -58,6 +58,7 @@ public class PongGame extends Node<ISession> implements IPongGame, Serializable 
     @Override
     public void register(ISession other) throws RemoteException {
         super.register(other); //To change body of generated methods, choose Tools | Templates.
+        System.out.println("Registered for this game: " + other.getUsername());
 //        other.register(this);
         //other.setPongGame(this);
     }
@@ -86,11 +87,9 @@ public class PongGame extends Node<ISession> implements IPongGame, Serializable 
 
     @Override
     public void onMessage(String message, Object o) throws RemoteException {
-        System.out.println("Game_Started = " + this.game_started);
         if (this.game_started) {
             if (!game_paused) {
                 super.onMessage(message);
-
                 switch (message) {
                     case "pushSessionUpdate":
                         ISession _temp = (ISession) o;
@@ -105,22 +104,29 @@ public class PongGame extends Node<ISession> implements IPongGame, Serializable 
                             //got update from player B, notify player A
                             this.playerA.onMessage("getSessionUpdate", _temp.getPlayerPosition());
                         }
-                        this.notifyAll("spectatorUpdate", new ISession[] {playerA, playerB});
+                        this.notifyAll("spectatorUpdate", new ISession[]{playerA, playerB});
                         break;
                     case "gameDisconnect":
-                        //this.stop();
-                        if (this.getPlayerB() != null && this.getPlayerA() != null) {
-                            //send disconnect to other player
-                            this.getPlayerB().onMessage("serverDisconnect", null);
-                            this.unRegister(this.getPlayerB());
-
-                            this.getPlayerA().onMessage("serverDisconnect", null);
-                            this.unRegister(this.getPlayerA());
-
-                            //this.server.getLobby().unRegister(this.playerA);
-                            //this.server.getLobby().unRegister(this.playerB);
-                            server.onMessage("gameStopped", this);
-                            stop();
+                        _temp = (ISession) o;
+                        //only disconnect the other players if you were the one that was playing.
+                        //if you were a spectator, only disconnect yourself.
+                        System.out.println("Got game disconnect");
+                        if (!_temp.isSpectating()) {
+                            System.out.println("Not a spectator but a player, disconnecting everyone.");
+                            if (this.getPlayerB() != null && this.getPlayerA() != null) {
+                                //send disconnect to other players
+                                for (Iterator it = this.getOthers().iterator(); it.hasNext();) {
+                                    Object object = it.next();
+                                    ISession _s = (ISession) object;
+                                    _s.onMessage("serverDisconnect", null);
+                                    this.unRegister(_s);
+                                }
+                                server.onMessage("gameStopped", this);
+                                stop();
+                            }
+                        } else {
+                            this.unRegister(_temp);
+                            _temp.onMessage("serverDisconnect", null);
                         }
                         break;
                     case "GameChatMessage":
@@ -148,7 +154,7 @@ public class PongGame extends Node<ISession> implements IPongGame, Serializable 
 
     private void update() throws RemoteException {
         if (game_started) {
-           //pass player rectangles to pong
+            //pass player rectangles to pong
             this.pong.update(this.playerA.getPlayerRectangle(), this.playerB.getPlayerRectangle());
             this.notifyAll("pongUpdate", this.pong.getPongCoordinates());
 

@@ -81,7 +81,7 @@ public class YAPTPanel extends javax.swing.JPanel {
     };
 
     public boolean isSpecating() {
-        return this.sessionImpl.isIsSpectating();
+        return this.sessionImpl.isSpectating();
     }
     private ILobby lobby;
 
@@ -119,7 +119,7 @@ public class YAPTPanel extends javax.swing.JPanel {
             g.fillRect(0, 0, gameField.width, gameField.height);
             g.setColor(Color.WHITE);
 
-            for (int x =  gameField.height; x > 0; x = x - 10) {
+            for (int x = gameField.height; x > 0; x = x - 10) {
                 g.drawRect(gameField.width / 2, x, 3, 5);
                 g.fillRect(gameField.width / 2, x, 3, 5);
             }
@@ -208,25 +208,23 @@ public class YAPTPanel extends javax.swing.JPanel {
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(468, 468, 468)
-                        .addComponent(button1, javax.swing.GroupLayout.PREFERRED_SIZE, 174, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 626, Short.MAX_VALUE))
-                    .addGroup(layout.createSequentialGroup()
-                        .addContainerGap()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jTextField1, javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addComponent(jScrollPane1))))
+                .addContainerGap()
+                .addComponent(button1, javax.swing.GroupLayout.PREFERRED_SIZE, 98, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 24, Short.MAX_VALUE)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(jTextField1, javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 1136, Short.MAX_VALUE))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addContainerGap(242, Short.MAX_VALUE)
-                .addComponent(button1, javax.swing.GroupLayout.PREFERRED_SIZE, 81, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(228, 228, 228)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 164, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(556, Short.MAX_VALUE)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 164, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                        .addComponent(button1, javax.swing.GroupLayout.PREFERRED_SIZE, 39, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(53, 53, 53)))
                 .addGap(5, 5, 5)
                 .addComponent(jTextField1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
@@ -236,70 +234,30 @@ public class YAPTPanel extends javax.swing.JPanel {
     private void formMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_formMouseClicked
     }//GEN-LAST:event_formMouseClicked
 
+    /**
+     * Disconnects the user from the que or from the game.
+     *
+     * @param evt
+     */
     private void button1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_button1ActionPerformed
         try {
-            if (!isLookingForGame() && (sessionImpl == null || !hasGameStarted())) {
-                //unwise
-                System.setSecurityManager(null);
-                //String serverAddress = (GameFrame.ARGS.length < 1) ? "localhost" : GameFrame.ARGS[0];
-                String serverAddress = "localhost";
-                //when trying to find a game, try to connect to server first
-
-                //register clientStub at remote server
-                Registry remoteRegistry = LocateRegistry.getRegistry(serverAddress, RMI_PORT);
-                server = (IYAPTServer) remoteRegistry.lookup(IYAPTServer.class.getSimpleName());
-
-                //create RMI-stub for a ClientImpl
-                //sessionImpl = new Session(server, this);
-                final ISession sessionStub = (ISession) UnicastRemoteObject.exportObject(sessionImpl, 0);
-
-                server.register(sessionStub);
-
-                //start pushing messages to the server
-                server.onMessage("Connected");
-
-                sessionImpl.onMessage("pushLookingForGame", null);
-                button1.setLabel("Disconnect...");
-
-                this.setFocusable(true);
-                this.requestFocusInWindow();
-
-                gameloop = new Thread(r);
-                gameloop.start();
-
-                //if we are looking for game and button is pressed, we should disconnect from the server
-                //OR if we're playing a game (gameStarted == true) and we pushed the button, we should also disc
-            } else if (hasGameStarted()) {
-                System.out.println("Leaving game!");
-                gameloop.interrupt();
-                sessionImpl.onMessage("pushDisconnect", null);
-
-                button1.setLabel("Find Game!");
-                cl.show(cards, "Lobby");
-
+            if (hasGameStarted() || sessionImpl.getChallengeMode()) {
+                System.out.println("game has started or game in challenge mode and disocnnecting");
+                sessionImpl.onMessage("pushDisconnect", true);
             } else if (isLookingForGame()) {
-                System.out.println("Leaving que!");
-                gameloop.interrupt();
+                System.out.println("is looking for game but disconnecting");
                 sessionImpl.onMessage("leaveQue", null);
-                cl.show(cards, "Lobby");
-                button1.setLabel("Find Game!");
             }
-        } catch (NotBoundException | RemoteException t) {
-            Logger.getLogger(IYAPTServer.class.getName()).log(
-                    Level.SEVERE,
-                    "An error ocurred. Ensure that no RMI server is running, then run this class as follows:\n"
-                    + "java -Djava.rmi.server.hostname=PUBLIC_CLIENT_IP -cp RMI-project-1.0-SNAPSHOT.jar nl.fontys.vangeenen.rmi.ClientImpl PUBLIC_SERVER_IP\n"
-                    + "* The value PUBLIC_SERVER_IP must equal the publicly routable IP of the server.\n"
-                    + "* The value PUBLIC_CLIENT_IP must equal YOUR routable IP.",
-                    t
-            );
-            System.exit(1);
+
+            gameloop.interrupt();
+            cl.show(cards, "Lobby");
+        } catch (RemoteException ex) {
+            Logger.getLogger(YAPTPanel.class.getName()).log(Level.SEVERE, null, ex);
         }
 
     }//GEN-LAST:event_button1ActionPerformed
 
     private void jTextField1KeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField1KeyReleased
-        // TODO add your handling code here:
         if (evt.getKeyCode() == KeyEvent.VK_ENTER && !jTextField1.getText().equals("")) {
             try {
                 this.sessionImpl.onMessage("SendGameChatMessage", this.sessionImpl.getUsername() + ": " + jTextField1.getText());
@@ -322,10 +280,18 @@ public class YAPTPanel extends javax.swing.JPanel {
         this.jTextArea1.append(chatMessage + "\n");
     }
 
-    public void joinGameAsSpectator(Session sessionImpl, IPongGame game) throws RemoteException {
+    /**
+     * Joins the specified @param('game') as a spectator.
+     *
+     * @param sessionImpl The user that will be spectating
+     * @param game The game to spectate
+     * @param cards The cards that hold the various screens to be displayed
+     * @throws RemoteException
+     */
+    public void joinGameAsSpectator(Session sessionImpl, IPongGame game, JPanel cards) throws RemoteException {
         this.sessionImpl = sessionImpl;
         gameField = new Rectangle(0, 0, this.getWidth(), this.getHeight() - (this.jTextArea1.getHeight() + this.jTextField1.getHeight() + 30));
-
+        this.cards = cards;
         System.out.println("Has game started is: " + this.sessionImpl.gameStarted);
         this.setFocusable(true);
         this.requestFocusInWindow();
@@ -339,60 +305,60 @@ public class YAPTPanel extends javax.swing.JPanel {
     }
 
     /**
-     * Starts or stops a game depending on the current status of the Session. It
-     * can initiate a Looking For Game request or Challenge another Player to a
-     * game. When Disconnecting all players participating or spectating in the
-     * game are returned to the lobby.
+     * Starts a new game in challenge mode. This method should be called when a
+     * user specifically challenges another user to a game.
      *
-     * @param sessionImpl
-     * @param lobbypanel
+     * @param session
+     * @param cards
+     * @throws NotBoundException
+     * @throws MalformedURLException
+     * @throws RemoteException
+     */
+    public void challenge(Session session, JPanel cards) throws NotBoundException, MalformedURLException, RemoteException {
+        this.sessionImpl = session;
+        this.cards = cards;
+        gameField = new Rectangle(0, 0, this.getWidth(), this.getHeight() - (this.jTextArea1.getHeight() + this.jTextField1.getHeight() + 30));
+        if (this.lobby == null) {
+            lobby = (ILobby) Naming.lookup(ILobby.class.getSimpleName());
+        }
+        this.setFocusable(true);
+        this.requestFocusInWindow();
+
+        gameloop = new Thread(r);
+        gameloop.start();
+
+        button1.setLabel("Disconnect...");
+    }
+
+    /**
+     * Sends a Looking For Game request to the gameserver. The player is then
+     * put in a que or matched up against another player who is also looking for
+     * a game.
+     *
+     * @param sessionImpl the session (i.e user) that is looking for a game
      * @param cards
      * @throws RemoteException
      * @throws NotBoundException
      * @throws MalformedURLException
      */
-    public void start(Session sessionImpl, LobbyPanel lobbypanel, JPanel cards) throws RemoteException, NotBoundException, MalformedURLException {
+    public void lookingForGame(Session sessionImpl, JPanel cards) throws RemoteException, NotBoundException, MalformedURLException {
         this.sessionImpl = sessionImpl;
-        this.lobbyPanel = lobbypanel;
         sessionImpl.setIsSpectating(false);
         gameField = new Rectangle(0, 0, this.getWidth(), this.getHeight() - (this.jTextArea1.getHeight() + this.jTextField1.getHeight() + 30));
         this.cards = cards;
+
         if (lobby == null) {
             lobby = (ILobby) Naming.lookup(ILobby.class.getSimpleName());
         }
 
-        if (!isLookingForGame() && (this.sessionImpl == null || !hasGameStarted()) && !isChallengeMode()) {
-            this.sessionImpl.onMessage("pushLookingForGame", null);
-            this.setFocusable(true);
-            this.requestFocusInWindow();
+        this.sessionImpl.onMessage("pushLookingForGame", null);
+        this.setFocusable(true);
+        this.requestFocusInWindow();
 
-            gameloop = new Thread(r);
-            gameloop.start();
+        gameloop = new Thread(r);
+        gameloop.start();
 
-            button1.setLabel("Disconnect...");
-        } else if (hasGameStarted() && !isChallengeMode()) {
-            System.out.println("Leaving game!");
-            gameloop.interrupt();
-            sessionImpl.onMessage("pushDisconnect", null);
-
-            button1.setLabel("Find Game!");
-            cl.show(lobbypanel, "Lobby");
-            sessionImpl.setChallengeMode(false);
-        } else if (isChallengeMode() && !isLookingForGame()) {
-            this.setFocusable(true);
-            this.requestFocusInWindow();
-
-            gameloop = new Thread(r);
-            gameloop.start();
-            button1.setLabel("Disconnect");
-        } else if (isLookingForGame()) {
-            System.out.println("Leaving que!");
-            gameloop.interrupt();
-            sessionImpl.onMessage("leaveQue", null);
-
-            button1.setLabel("Find Game!");
-            cl.show(lobbypanel, "Lobby");
-        }
+        button1.setLabel("Disconnect...");
     }
 
     private boolean isChallengeMode() {

@@ -49,15 +49,17 @@ public class Session extends Node<IPongGame> implements ISession {
         this.isSpectating = isSpectating;
     }
 
-    public boolean isIsSpectating() {
+    @Override
+    public boolean isSpectating() {
         return isSpectating;
     }
 
     /**
      * *
      * Session manages a game between two players. It registers when the game
-     * starts, ends or when a player leaves. It receives updates from the server
-     * through RMI. It updates the YAPTClient with player and bat positions.
+     * lookingForGames, ends or when a player leaves. It receives updates from
+     * the server through RMI. It updates the YAPTClient with player and bat
+     * positions.
      *
      * @param server
      * @throws java.rmi.RemoteException
@@ -71,6 +73,7 @@ public class Session extends Node<IPongGame> implements ISession {
             this.lobbyPanel = lobbyPanel;
             this.username = username;
             this.lobby = lobby = (ILobby) Naming.lookup(ILobby.class.getSimpleName());
+            this.isSpectating = false;
         } catch (NotBoundException ex) {
             Logger.getLogger(Session.class.getName()).log(Level.SEVERE, null, ex);
         } catch (MalformedURLException ex) {
@@ -195,7 +198,7 @@ public class Session extends Node<IPongGame> implements ISession {
                 }
                 break;
             case "pushBatUpdate":
-                if (!gameInterrupted) {
+                if (!gameInterrupted || pongGame == null) {
                     //my bat moved, notify server
                     System.out.println("pushing batupdate to server");
                     pongGame.onMessage("pushSessionUpdate", this); //push new sessionstate to server
@@ -265,17 +268,17 @@ public class Session extends Node<IPongGame> implements ISession {
                 break;
             case "pushDisconnect":
                 pongGame.onMessage("gameDisconnect", this);
-                lookingForGame = false;
-                gameInterrupted = true;
-                gameStarted = false;
                 break;
             case "cancelChallengeRequest":
                 lookingForGame = false;
                 gameInterrupted = true;
                 gameStarted = false;
                 break;
-            case "serverDisconnect":
+            case "serverDisconnect": 
+                System.out.println("got server disc");
+                this.pongGame = null;
                 gameStarted = false;
+                isSpectating = false;
                 gameInterrupted = true;
                 lookingForGame = false;
                 game.resetPlayer();
@@ -346,6 +349,7 @@ public class Session extends Node<IPongGame> implements ISession {
             try {
                 if (this.lobby.getOthers().contains(_opponent)) {
                     lookingForGame = false;
+                    gameStarted = true;
                     ISession[] _players = {this, _opponent};
                     server.onMessage("newGameWithOpponent", _players);
                 } else {

@@ -55,12 +55,6 @@ public class GameClient implements IGameClient, Serializable {
         this.player1 = new Player("player 1", p1);
         this.player2 = new Player("player 2", p2);
         this.session = spectator;
-        try {
-            System.out.println("width: " + this.session.getClientRectangle().width + ", height: " + this.session.getClientRectangle().height);
-        } catch (RemoteException ex) {
-            Logger.getLogger(GameClient.class.getName()).log(Level.SEVERE, null, ex);
-        }
-
     }
 
     public void setPlayer1(IPlayer player1) {
@@ -80,13 +74,12 @@ public class GameClient implements IGameClient, Serializable {
     @Override
     public void draw(Graphics g) {
         try {
-
-
             this.player1.draw(g);
 
             if (this.player2 != null) {
                 this.player2.draw(g);
             }
+            
             //draw the pong
             Graphics2D g2d = (Graphics2D) g;
 

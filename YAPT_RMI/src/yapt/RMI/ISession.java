@@ -42,4 +42,6 @@ public interface ISession extends INode<IPongGame> {
 
     public int recieveChallengeRequest(ISession opponent) throws RemoteException;
     
+    public boolean isSpectating() throws RemoteException;
+    
 }

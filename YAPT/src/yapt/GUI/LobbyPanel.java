@@ -15,6 +15,7 @@ import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -42,7 +43,6 @@ public class LobbyPanel extends javax.swing.JPanel {
     private JPanel cards;
     private List<ISession> onlinePlayers;
     private DefaultListModel players, pongGames;
-    //private ILobby lobby;
 
     /**
      * Creates new form LobbyPanel
@@ -52,8 +52,8 @@ public class LobbyPanel extends javax.swing.JPanel {
         this.cl = cl;
 
         onlinePlayers = new ArrayList<>();
-        players = new DefaultListModel<String>();
-        pongGames = new DefaultListModel<String>();
+        players = new DefaultListModel<>();
+        pongGames = new DefaultListModel<>();
 
     }
 
@@ -61,18 +61,10 @@ public class LobbyPanel extends javax.swing.JPanel {
         return sessionImpl;
     }
 
-    public void setPongGames(List<IPongGame> _pongGames) {
-        this.lst_currentGames = new JList(pongGames);
-    }
-
     public void setOnlinePlayers(Collection<ISession> onlinePlayers) throws RemoteException {
-        for (ISession s : onlinePlayers) {
-            if (players.contains(s.getUsername())) {
-                System.out.println("List contains " + s.getUsername());
-            } else {
-                System.out.println("List does not contain " + s.getUsername());
-                players.addElement(s.getUsername());
-            }
+        players.clear();
+        for (ISession is : onlinePlayers) {
+            players.addElement(is.getUsername());
         }
         this.lst_onlinePlayers.setModel(players);
     }
@@ -122,6 +114,16 @@ public class LobbyPanel extends javax.swing.JPanel {
         //create RMI-stub for a ClientImpl
         //lobby = (ILobby) Naming.lookup(ILobby.class.getSimpleName());
 
+        for (Iterator it = server.getLobby().getOthers().iterator(); it.hasNext();) {
+            Object object = it.next();
+            ISession _s = (ISession) object;
+
+            if (_s.getUsername().equals(username)) {
+                JOptionPane.showMessageDialog((Component) null, "Someone is already currently logged in with this username. Please pick another one.",
+                        "alert", JOptionPane.OK_OPTION);
+                throw new RemoteException("Username taken");
+            }
+        }
         sessionImpl = new Session(username, server, gamepanel, this);
         final ISession sessionStub = (ISession) UnicastRemoteObject.exportObject(sessionImpl, 0);
 
@@ -159,35 +161,19 @@ public class LobbyPanel extends javax.swing.JPanel {
         jTextArea1.setRows(5);
         jScrollPane1.setViewportView(jTextArea1);
 
-        jTextField1.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jTextField1ActionPerformed(evt);
-            }
-        });
         jTextField1.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyTyped(java.awt.event.KeyEvent evt) {
-                jTextField1KeyTyped(evt);
-            }
             public void keyReleased(java.awt.event.KeyEvent evt) {
                 jTextField1KeyReleased(evt);
             }
         });
 
-        lst_currentGames.setModel(new javax.swing.AbstractListModel() {
-            String[] strings = { "Item 1", "Item 2", "Item 3", "Item 4", "Item 5" };
-            public int getSize() { return strings.length; }
-            public Object getElementAt(int i) { return strings[i]; }
-        });
+        lst_currentGames.setModel(lst_currentGames.getModel());
         jScrollPane2.setViewportView(lst_currentGames);
 
-        lst_onlinePlayers.setModel(new javax.swing.AbstractListModel() {
-            String[] strings = { "Item 1", "Item 2", "Item 3", "Item 4", "Item 5" };
-            public int getSize() { return strings.length; }
-            public Object getElementAt(int i) { return strings[i]; }
-        });
+        lst_onlinePlayers.setModel(lst_onlinePlayers.getModel());
         jScrollPane3.setViewportView(lst_onlinePlayers);
 
-        btn_joinGame.setText("Join Game");
+        btn_joinGame.setText("Spectate");
         btn_joinGame.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btn_joinGameActionPerformed(evt);
@@ -220,9 +206,9 @@ public class LobbyPanel extends javax.swing.JPanel {
                     .addGroup(layout.createSequentialGroup()
                         .addGap(178, 178, 178)
                         .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 340, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(35, 35, 35)
-                        .addComponent(btn_startGame, javax.swing.GroupLayout.PREFERRED_SIZE, 143, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(btn_startGame, javax.swing.GroupLayout.PREFERRED_SIZE, 137, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(37, 37, 37)
                         .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 340, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(184, 184, 184)))
                 .addContainerGap())
@@ -254,15 +240,6 @@ public class LobbyPanel extends javax.swing.JPanel {
         );
     }// </editor-fold>//GEN-END:initComponents
 
-    private void jTextField1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField1ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jTextField1ActionPerformed
-
-    private void jTextField1KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField1KeyTyped
-        // TODO add your handling code here:
-        //jTextArea1.append("" + evt.getKeyCode());       
-    }//GEN-LAST:event_jTextField1KeyTyped
-
     /**
      * Attempts to join the selected game as a spectator.
      *
@@ -281,7 +258,7 @@ public class LobbyPanel extends javax.swing.JPanel {
                     }
                 }
                 if (spectatingGame != null) {
-                    this.gamePanel.joinGameAsSpectator(sessionImpl, spectatingGame);
+                    this.gamePanel.joinGameAsSpectator(sessionImpl, spectatingGame, cards);
                 }
             } catch (RemoteException ex) {
                 Logger.getLogger(LobbyPanel.class.getName()).log(Level.SEVERE, null, ex);
@@ -289,8 +266,14 @@ public class LobbyPanel extends javax.swing.JPanel {
         }
     }//GEN-LAST:event_btn_joinGameActionPerformed
 
+    /**
+     * Handles the sending of chat messages in the lobby. When a user presses
+     * the "ENTER" key and the message in the messagefield is NOT empty, the
+     * message will be sent to all other clients in the lobby.
+     *
+     * @param evt
+     */
     private void jTextField1KeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField1KeyReleased
-        // TODO add your handling code here:
         if (evt.getKeyCode() == KeyEvent.VK_ENTER && !jTextField1.getText().equals("")) {
             try {
                 this.sessionImpl.onMessage("SendPublicChatMessage", username + ": " + jTextField1.getText());
@@ -301,11 +284,16 @@ public class LobbyPanel extends javax.swing.JPanel {
         }
     }//GEN-LAST:event_jTextField1KeyReleased
 
+    /**
+     * Sends a Looking For Game request to the server. Once another player has
+     * been found, a game will commence.
+     *
+     * @param evt
+     */
     private void btn_startGameActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_startGameActionPerformed
-        // TODO add your handling code here:
         try {
             this.cl.show(cards, "Game");
-            this.gamePanel.start(sessionImpl, this, cards);
+            this.gamePanel.lookingForGame(sessionImpl, cards);
         } catch (RemoteException | NotBoundException | MalformedURLException ex) {
             Logger.getLogger(LobbyPanel.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -321,9 +309,14 @@ public class LobbyPanel extends javax.swing.JPanel {
         if (this.lst_onlinePlayers.getSelectedIndex() != -1) {
             try {
                 ISession opponent = this.sessionImpl.getplayers((String) this.lst_onlinePlayers.getSelectedValue());
-                this.sessionImpl.challengePlayer(opponent);
-                this.cl.show(cards, "Game");
-                this.gamePanel.start(sessionImpl, this, cards);
+                if (opponent.getUsername().equals(this.sessionImpl.getUsername())) {
+                    JOptionPane.showMessageDialog((Component) null, "You cannot challenge yourself to a game... :-(",
+                            "alert", JOptionPane.OK_OPTION);
+                } else {
+                    this.sessionImpl.challengePlayer(opponent);
+                    this.cl.show(cards, "Game");
+                    this.gamePanel.challenge(sessionImpl, cards);
+                }
             } catch (RemoteException | NotBoundException | MalformedURLException ex) {
                 Logger.getLogger(LobbyPanel.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -338,7 +331,7 @@ public class LobbyPanel extends javax.swing.JPanel {
             if (result == 0) {
                 System.out.println("Accepted challenge");
                 this.cl.show(cards, "Game");
-                this.gamePanel.start(sessionImpl, this, cards);
+                this.gamePanel.lookingForGame(sessionImpl, cards);
                 return result;
             } else {
                 System.out.println("Did not accept challenge");
