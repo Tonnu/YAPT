@@ -71,7 +71,9 @@ public class YAPTPanel extends javax.swing.JPanel {
                 @Override
                 public void run() {
                     repaint();
-                    update();
+                    if (!isSpecating()) {
+                        update();
+                    }
                 }
 
             };
@@ -241,7 +243,7 @@ public class YAPTPanel extends javax.swing.JPanel {
      */
     private void button1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_button1ActionPerformed
         try {
-            if (hasGameStarted() || sessionImpl.getChallengeMode()) {
+            if (hasGameStarted()) {
                 System.out.println("game has started or game in challenge mode and disocnnecting");
                 sessionImpl.onMessage("pushDisconnect", true);
             } else if (isLookingForGame()) {

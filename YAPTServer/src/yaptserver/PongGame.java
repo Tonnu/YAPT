@@ -35,7 +35,7 @@ public class PongGame extends Node<ISession> implements IPongGame, Serializable 
 
     /**
      * *
-     * Manages a game between two people. Specifically, it holds the pong
+     * Manages a game between two users. Specifically, it holds the pong
      * object, both player positions and calculates collisions.
      *
      * @param server the server to communicate with.
@@ -159,7 +159,6 @@ public class PongGame extends Node<ISession> implements IPongGame, Serializable 
             this.notifyAll("pongUpdate", this.pong.getPongCoordinates());
 
             //now get player updates
-            //this.playerA.getPlayerPosition()
             if (pong.isOutOfLeftBound()) {
                 //server.onMessage("playerScore", 2);
                 rightScore++;
@@ -180,13 +179,7 @@ public class PongGame extends Node<ISession> implements IPongGame, Serializable 
                 this.unRegister(playerB);
                 stop();
             }
-
-        } else {
-            //this.server.getLobby().unRegister(this.playerA);
-            //this.server.getLobby().unRegister(this.playerB);
-
-            //throw new RemoteException();
-        }
+        } 
     }
 
     @Override

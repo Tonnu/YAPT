@@ -274,7 +274,7 @@ public class Session extends Node<IPongGame> implements ISession {
                 gameInterrupted = true;
                 gameStarted = false;
                 break;
-            case "serverDisconnect": 
+            case "serverDisconnect":
                 System.out.println("got server disc");
                 this.pongGame = null;
                 gameStarted = false;
@@ -289,6 +289,12 @@ public class Session extends Node<IPongGame> implements ISession {
         }
     }
 
+    @Override
+    public boolean isGameStarted() {
+        return gameStarted;
+    }
+
+    @Override
     public IPongGame getPongGame() {
         return pongGame;
     }
@@ -334,33 +340,32 @@ public class Session extends Node<IPongGame> implements ISession {
         return null;
     }
 
-    public void challengePlayer(ISession _opponent) {
+    public int challengePlayer(ISession _opponent) {
         gameInterrupted = false;
         challengeMode = true;
         try {
-            game = new GameClient(this, true);
+            if (_opponent.isGameStarted()) {
+                return -1;
+            } else {
+                game = new GameClient(this, true);
 
-        } catch (RemoteException ex) {
-            Logger.getLogger(Session.class
-                    .getName()).log(Level.SEVERE, null, ex);
-        }
-
-        if (!lookingForGame) {
-            try {
-                if (this.lobby.getOthers().contains(_opponent)) {
-                    lookingForGame = false;
-                    gameStarted = true;
-                    ISession[] _players = {this, _opponent};
-                    server.onMessage("newGameWithOpponent", _players);
-                } else {
-                    System.out.println("Opponent not found!");
-
+                if (!lookingForGame) {
+                    if (this.lobby.getOthers().contains(_opponent)) {
+                        lookingForGame = false;
+                        gameStarted = true;
+                        ISession[] _players = {this, _opponent};
+                        server.onMessage("newGameWithOpponent", _players);
+                        return 1;
+                    } else {
+                        System.out.println("Opponent not found!");
+                        return -1;
+                    }
                 }
-            } catch (RemoteException ex) {
-                Logger.getLogger(Session.class
-                        .getName()).log(Level.SEVERE, null, ex);
             }
+        } catch (RemoteException ex) {
+            Logger.getLogger(Session.class.getName()).log(Level.SEVERE, null, ex);
         }
+        return -1;
     }
 
     @Override

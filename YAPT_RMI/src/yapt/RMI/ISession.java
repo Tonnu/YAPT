@@ -29,19 +29,21 @@ public interface ISession extends INode<IPongGame> {
     public int getGamePongNumber() throws RemoteException;
 
     public void setGamePongNumber(int _number) throws RemoteException;
-    
+
     public void setPongGame(IPongGame _game) throws RemoteException;
-    
+
     public IPongGame getPongGame() throws RemoteException;
-    
+
     public String getUsername() throws RemoteException;
-    
+
     public Rectangle getClientRectangle() throws RemoteException;
-    
+
     public boolean getChallengeMode() throws RemoteException;
 
     public int recieveChallengeRequest(ISession opponent) throws RemoteException;
-    
+
     public boolean isSpectating() throws RemoteException;
-    
+
+    public boolean isGameStarted() throws RemoteException;
+
 }

@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.DefaultListModel;
-import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import yapt.GAME.Session;
@@ -39,7 +38,7 @@ public class LobbyPanel extends javax.swing.JPanel {
     private Session sessionImpl;
 
     private YAPTPanel gamePanel;
-    private CardLayout cl;
+    private final CardLayout cl;
     private JPanel cards;
     private List<ISession> onlinePlayers;
     private DefaultListModel players, pongGames;
@@ -61,6 +60,12 @@ public class LobbyPanel extends javax.swing.JPanel {
         return sessionImpl;
     }
 
+    /**
+     * Updates the GUI with a new list of currently online players.
+     *
+     * @param onlinePlayers The new list of online players.
+     * @throws RemoteException If the new list can not be retrieved.
+     */
     public void setOnlinePlayers(Collection<ISession> onlinePlayers) throws RemoteException {
         players.clear();
         for (ISession is : onlinePlayers) {
@@ -69,11 +74,22 @@ public class LobbyPanel extends javax.swing.JPanel {
         this.lst_onlinePlayers.setModel(players);
     }
 
+    /**
+     * Appends a new message to the lobby chat area.
+     *
+     * @param chatMessage The message to be appended.
+     */
     public void newMessage(String chatMessage) {
         //System.out.println("Someone is calling newMessage()");
         this.jTextArea1.append(chatMessage + "\n");
     }
 
+    /**
+     * Updates the GUI with a new list of games that are currently being played.
+     *
+     * @param newGameList The new list of games.
+     * @throws RemoteException If the new games list can not be retrieved.
+     */
     public void setGameList(List<String> newGameList) throws RemoteException {
         pongGames.clear();
         for (String _game : newGameList) {
@@ -82,20 +98,24 @@ public class LobbyPanel extends javax.swing.JPanel {
         this.lst_currentGames.setModel(pongGames);
     }
 
-    public void addPlayer(ISession player) throws RemoteException {
-        this.players.addElement(player.getUsername());
-        this.lst_onlinePlayers.setModel(players);
-
-    }
-
-    public void removeGame(IPongGame game) {
-        this.pongGames.removeElement("");
-    }
-
-    public void removePlayer(ISession player) {
-        this.onlinePlayers.remove(player);
-    }
-
+    /**
+     * Tries to establish a connection to the server lobby through RMI. Checks
+     * if the username is already taken, and if not subscribes to the Lobby &
+     * Server. If the username IS taken, the user gets notified and will be
+     * returned to the login screen.
+     *
+     * @param serverAddress The address of the remote (RMI) server.
+     * @param username The username to login with
+     * @param gamepanel The Gamepanel on which games will be played.
+     * @param cards The cards containing all possible Swing Panels (Lobby &
+     * Game)
+     * @throws RemoteException If the client can not be connected to the remote
+     * server.
+     * @throws NotBoundException If the client can not find the Gameserver in
+     * the RMI registry
+     * @throws MalformedURLException If the client can not fiend the remote
+     * server.
+     */
     public void tryLogin(String serverAddress, String username, YAPTPanel gamepanel, JPanel cards) throws RemoteException, NotBoundException, MalformedURLException {
         this.username = username;
         this.gamePanel = gamepanel;
@@ -243,7 +263,7 @@ public class LobbyPanel extends javax.swing.JPanel {
     /**
      * Attempts to join the selected game as a spectator.
      *
-     * @param evt
+     * @param evt The button event
      */
     private void btn_joinGameActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_joinGameActionPerformed
         if (this.lst_currentGames.getSelectedIndex() != -1) {
@@ -271,7 +291,7 @@ public class LobbyPanel extends javax.swing.JPanel {
      * the "ENTER" key and the message in the messagefield is NOT empty, the
      * message will be sent to all other clients in the lobby.
      *
-     * @param evt
+     * @param evt The Key event
      */
     private void jTextField1KeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextField1KeyReleased
         if (evt.getKeyCode() == KeyEvent.VK_ENTER && !jTextField1.getText().equals("")) {
@@ -288,7 +308,7 @@ public class LobbyPanel extends javax.swing.JPanel {
      * Sends a Looking For Game request to the server. Once another player has
      * been found, a game will commence.
      *
-     * @param evt
+     * @param evt The button event
      */
     private void btn_startGameActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_startGameActionPerformed
         try {
@@ -300,10 +320,10 @@ public class LobbyPanel extends javax.swing.JPanel {
     }//GEN-LAST:event_btn_startGameActionPerformed
 
     /**
-     * Challenges the selected player to a game. The opponent will recieve a
+     * Challenges the selected player to a game. The opponent will receive a
      * popup containing a request for a new pong game.
      *
-     * @param evt
+     * @param evt The button event
      */
     private void btn_ChallengeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_ChallengeActionPerformed
         if (this.lst_onlinePlayers.getSelectedIndex() != -1) {
@@ -313,9 +333,14 @@ public class LobbyPanel extends javax.swing.JPanel {
                     JOptionPane.showMessageDialog((Component) null, "You cannot challenge yourself to a game... :-(",
                             "alert", JOptionPane.OK_OPTION);
                 } else {
-                    this.sessionImpl.challengePlayer(opponent);
-                    this.cl.show(cards, "Game");
-                    this.gamePanel.challenge(sessionImpl, cards);
+                    int result = this.sessionImpl.challengePlayer(opponent);
+                    if (result == -1) {
+                        JOptionPane.showMessageDialog((Component) null, "The selected player is currently not available for playing a game.",
+                            "alert", JOptionPane.OK_OPTION);
+                    } else if (result == 1) {
+                        this.cl.show(cards, "Game");
+                        this.gamePanel.challenge(sessionImpl, cards);
+                    }
                 }
             } catch (RemoteException | NotBoundException | MalformedURLException ex) {
                 Logger.getLogger(LobbyPanel.class.getName()).log(Level.SEVERE, null, ex);
@@ -323,19 +348,21 @@ public class LobbyPanel extends javax.swing.JPanel {
         }
     }
 
+    /**
+     * Notfies the user that another player is challenging him to a game of
+     * Pong. If the user accepts, the game will be started. If, not nothing will
+     * happen.
+     *
+     * @return The result of the dialog (0 for accepted)
+     */
     public int spawnChallengeRequest() {
         try {
             int result = JOptionPane.showConfirmDialog((Component) null, "Someone has requested to play a game with you! Accept?",
                     "alert", JOptionPane.OK_CANCEL_OPTION);
-            System.out.println("Dialog result was " + result);
             if (result == 0) {
-                System.out.println("Accepted challenge");
                 this.cl.show(cards, "Game");
                 this.gamePanel.lookingForGame(sessionImpl, cards);
                 return result;
-            } else {
-                System.out.println("Did not accept challenge");
-
             }
         } catch (RemoteException | NotBoundException | MalformedURLException ex) {
             Logger.getLogger(LobbyPanel.class.getName()).log(Level.SEVERE, null, ex);
