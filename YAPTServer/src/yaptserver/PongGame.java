@@ -94,7 +94,6 @@ public class PongGame extends Node<ISession> implements IPongGame, Serializable 
                 switch (message) {
                     case "pushSessionUpdate":
                         ISession _temp = (ISession) o;
-                        this.notifyAll("spectatorUpdate", _temp);
                         if (_temp.getPlayerNumber() == 1) {
                             //update player A
                             this.playerA = _temp;
@@ -106,6 +105,7 @@ public class PongGame extends Node<ISession> implements IPongGame, Serializable 
                             //got update from player B, notify player A
                             this.playerA.onMessage("getSessionUpdate", _temp.getPlayerPosition());
                         }
+                        this.notifyAll("spectatorUpdate", new ISession[] {playerA, playerB});
                         break;
                     case "gameDisconnect":
                         //this.stop();

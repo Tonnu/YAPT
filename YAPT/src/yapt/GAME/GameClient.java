@@ -80,15 +80,7 @@ public class GameClient implements IGameClient, Serializable {
     @Override
     public void draw(Graphics g) {
         try {
-            g.drawRect(0, 0, YAPTPanel.WIDTH, YAPTPanel.HEIGHT);
-            g.setColor(Color.BLACK);
-            g.fillRect(0, 0, YAPTPanel.WIDTH, YAPTPanel.HEIGHT);
-            g.setColor(Color.WHITE);
 
-            for (int x = this.session.getClientRectangle().height; x > 0; x = x - 10) {
-                g.drawRect(this.session.getClientRectangle().width / 2, x, 3, 5);
-                g.fillRect(this.session.getClientRectangle().width / 2, x, 3, 5);
-            }
 
             this.player1.draw(g);
 

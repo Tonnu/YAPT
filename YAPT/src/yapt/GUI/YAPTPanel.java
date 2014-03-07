@@ -114,7 +114,15 @@ public class YAPTPanel extends javax.swing.JPanel {
     protected void paintComponent(Graphics g) {
         super.paintComponent(g); //To change body of generated methods, choose Tools | Templates.
         if (hasGameStarted()) {
+            g.drawRect(0, 0, gameField.width, gameField.height);
+            g.setColor(Color.BLACK);
+            g.fillRect(0, 0, gameField.width, gameField.height);
+            g.setColor(Color.WHITE);
 
+            for (int x =  gameField.height; x > 0; x = x - 10) {
+                g.drawRect(gameField.width / 2, x, 3, 5);
+                g.fillRect(gameField.width / 2, x, 3, 5);
+            }
             sessionImpl.draw(g);
         }
     }
@@ -316,6 +324,7 @@ public class YAPTPanel extends javax.swing.JPanel {
 
     public void joinGameAsSpectator(Session sessionImpl, IPongGame game) throws RemoteException {
         this.sessionImpl = sessionImpl;
+        gameField = new Rectangle(0, 0, this.getWidth(), this.getHeight() - (this.jTextArea1.getHeight() + this.jTextField1.getHeight() + 30));
 
         System.out.println("Has game started is: " + this.sessionImpl.gameStarted);
         this.setFocusable(true);

@@ -147,7 +147,7 @@ public class Session extends Node<IPongGame> implements ISession {
                 pongGame = (IPongGame) o;
                 pongGame.register(this);
 
-                game = new GameClient(this,pongGame.getPlayerA(), pongGame.getPlayerB());
+                game = new GameClient(this, pongGame.getPlayerA(), pongGame.getPlayerB());
 
                 System.out.println("got spectating!");
                 this.isSpectating = true;
@@ -204,7 +204,8 @@ public class Session extends Node<IPongGame> implements ISession {
             case "getSessionUpdate":
                 //opponent's session updated
                 //set opponent's bat for drawing purposes
-                System.out.println("recieved opponent sessionupdate from server");
+                System.out.println("recieved opponent sessionupdate from server"
+                        + "");
                 if (!gameInterrupted) {
                     Vector2f _opponentPosition = (Vector2f) o;
                     this.game.getOpponent().setBatCoordinates(_opponentPosition); //needed for drawing 
@@ -213,18 +214,14 @@ public class Session extends Node<IPongGame> implements ISession {
             case "spectatorUpdate":
                 if (isSpectating && !gameInterrupted) {
                     System.out.println("got spectator update");
-                    ISession _aPlayer = (ISession) o;
-                    if (_aPlayer != null) {
-                        if (this.getPlayerNumber() == _aPlayer.getPlayerNumber()) {
-                            this.game.getPlayer().setBatCoordinates(_aPlayer.getPlayerPosition());
-                        } else {
-                            if (this.game.getOpponent() != null) {
-                                this.game.getOpponent().setBatCoordinates(_aPlayer.getPlayerPosition());
-                            }
-                        }
-                    } else {
-                        System.out.println("Spectator ISession equals null");
+                    ISession[] _players = (ISession[]) o;
+                    if (_players != null) {
+                        this.game.getPlayer().setBatCoordinates(_players[0].getPlayerPosition());
+                        this.game.getOpponent().setBatCoordinates(_players[1].getPlayerPosition());
                     }
+
+                } else {
+                    System.out.println("Spectator ISession equals null");
                 }
                 break;
             case "getPongGameNumber":
@@ -339,8 +336,10 @@ public class Session extends Node<IPongGame> implements ISession {
         challengeMode = true;
         try {
             game = new GameClient(this, true);
+
         } catch (RemoteException ex) {
-            Logger.getLogger(Session.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(Session.class
+                    .getName()).log(Level.SEVERE, null, ex);
         }
 
         if (!lookingForGame) {
@@ -351,9 +350,11 @@ public class Session extends Node<IPongGame> implements ISession {
                     server.onMessage("newGameWithOpponent", _players);
                 } else {
                     System.out.println("Opponent not found!");
+
                 }
             } catch (RemoteException ex) {
-                Logger.getLogger(Session.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(Session.class
+                        .getName()).log(Level.SEVERE, null, ex);
             }
         }
     }
