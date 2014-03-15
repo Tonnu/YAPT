@@ -8,12 +8,14 @@ package yapt.GUI;
 import java.awt.CardLayout;
 import java.awt.Component;
 import java.awt.event.KeyEvent;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.rmi.server.RMISocketFactory;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -30,6 +32,7 @@ import static yapt.RMI.INode.RMI_PORT;
 import yapt.RMI.IPongGame;
 import yapt.RMI.ISession;
 import yapt.RMI.IYAPTServer;
+import yapt.RMI.StaticPortRMISocketFactory;
 
 /**
  *
@@ -121,10 +124,12 @@ public class LobbyPanel extends javax.swing.JPanel {
      * @throws MalformedURLException If the client can not fiend the remote
      * server.
      */
-    public void tryLogin(String serverAddress, String username, YAPTPanel gamepanel, JPanel cards) throws RemoteException, NotBoundException, MalformedURLException {
+    public void tryLogin(String serverAddress, String username, YAPTPanel gamepanel, JPanel cards) throws RemoteException, NotBoundException, MalformedURLException, IOException {
         this.username = username;
         this.gamePanel = gamepanel;
         this.cards = cards;
+        RMISocketFactory.setSocketFactory(new StaticPortRMISocketFactory());
+
         //unwise
         System.setSecurityManager(null);
         //String serverAddress = (GameFrame.ARGS.length < 1) ? "localhost" : GameFrame.ARGS[0];
@@ -139,7 +144,7 @@ public class LobbyPanel extends javax.swing.JPanel {
         //create RMI-stub for a ClientImpl
         //lobby = (ILobby) Naming.lookup(ILobby.class.getSimpleName());
 
-        for (Iterator it = server.getLobby().getOthers().iterator(); it.hasNext();) {
+        for (Iterator it = lobby.getOthers().iterator(); it.hasNext();) {
             Object object = it.next();
             ISession _s = (ISession) object;
 
@@ -150,9 +155,9 @@ public class LobbyPanel extends javax.swing.JPanel {
             }
         }
         sessionImpl = new Session(username, server, gamepanel, this);
-        final ISession sessionStub = (ISession) UnicastRemoteObject.exportObject(sessionImpl, 0);
+        final ISession sessionStub = (ISession) UnicastRemoteObject.exportObject(sessionImpl, 80);
 
-        server.register(sessionStub);
+        server.register(null);
 
         //start pushing messages to the server
         server.onMessage("Connected", sessionImpl);
@@ -341,7 +346,7 @@ public class LobbyPanel extends javax.swing.JPanel {
                     int result = this.sessionImpl.challengePlayer(opponent);
                     if (result == -1) {
                         JOptionPane.showMessageDialog((Component) null, "The selected player is currently not available for playing a game.",
-                            "alert", JOptionPane.OK_OPTION);
+                                "alert", JOptionPane.OK_OPTION);
                     } else if (result == 1) {
                         this.cl.show(cards, "Game");
                         this.gamePanel.challenge(sessionImpl, cards);

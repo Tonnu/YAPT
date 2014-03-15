@@ -11,6 +11,8 @@ import java.net.MalformedURLException;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -20,6 +22,7 @@ import java.util.logging.Logger;
 import yapt.GUI.LobbyPanel;
 import yapt.GUI.YAPTPanel;
 import yapt.RMI.ILobby;
+import static yapt.RMI.INode.RMI_PORT;
 import yapt.RMI.IPongGame;
 import yapt.RMI.ISession;
 import yapt.RMI.IYAPTServer;
@@ -72,11 +75,10 @@ public class Session extends Node<IPongGame> implements ISession {
             this.gamePanel = gamepanel;
             this.lobbyPanel = lobbyPanel;
             this.username = username;
-            this.lobby = lobby = (ILobby) Naming.lookup(ILobby.class.getSimpleName());
+            Registry remoteRegistry = LocateRegistry.getRegistry("188.226.136.184", RMI_PORT);
+            this.lobby = lobby = (ILobby)remoteRegistry.lookup(ILobby.class.getSimpleName());
             this.isSpectating = false;
         } catch (NotBoundException ex) {
-            Logger.getLogger(Session.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (MalformedURLException ex) {
             Logger.getLogger(Session.class.getName()).log(Level.SEVERE, null, ex);
         }
 

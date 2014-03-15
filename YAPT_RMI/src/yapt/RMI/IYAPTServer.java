@@ -17,4 +17,6 @@ public interface IYAPTServer extends INode<ISession> {
     public ILobby getLobby() throws RemoteException;
     
     public Collection<IPongGame> getCurrentGames() throws RemoteException;
+    
+    public void registerByParameters(String username);
 }
