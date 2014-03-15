@@ -125,6 +125,11 @@ public class Session extends Node<IPongGame> implements ISession {
         }
     }
 
+    /**
+     * Calls the GameClient's draw() method.
+     *
+     * @param g
+     */
     public void draw(Graphics g) {
         try {
             this.game.draw(g);
@@ -133,6 +138,11 @@ public class Session extends Node<IPongGame> implements ISession {
         }
     }
 
+    /**
+     * Calls the GameClient's update() method.
+     *
+     * @param direction the direction in which the bat is moving (1=UP, -1=DOWN)
+     */
     public void update(int direction) {
         try {
             this.game.update(direction);
@@ -207,8 +217,6 @@ public class Session extends Node<IPongGame> implements ISession {
             case "getSessionUpdate":
                 //opponent's session updated
                 //set opponent's bat for drawing purposes
-                System.out.println("recieved opponent sessionupdate from server"
-                        + "");
                 if (!gameInterrupted) {
                     Vector2f _opponentPosition = (Vector2f) o;
                     this.game.getOpponent().setBatCoordinates(_opponentPosition); //needed for drawing 
@@ -216,15 +224,13 @@ public class Session extends Node<IPongGame> implements ISession {
                 break;
             case "spectatorUpdate":
                 if (isSpectating && !gameInterrupted) {
-                    System.out.println("got spectator update");
                     ISession[] _players = (ISession[]) o;
                     if (_players != null) {
                         this.game.getPlayer().setBatCoordinates(_players[0].getPlayerPosition());
                         this.game.getOpponent().setBatCoordinates(_players[1].getPlayerPosition());
+                        this.game.getPlayer().setScore(this.pongGame.getPlayerScores()[0]);
+                        this.game.getOpponent().setScore(this.pongGame.getPlayerScores()[1]);
                     }
-
-                } else {
-                    System.out.println("Spectator ISession equals null");
                 }
                 break;
             case "getPongGameNumber":
@@ -275,7 +281,6 @@ public class Session extends Node<IPongGame> implements ISession {
                 gameStarted = false;
                 break;
             case "serverDisconnect":
-                System.out.println("got server disc");
                 this.pongGame = null;
                 gameStarted = false;
                 isSpectating = false;
@@ -340,6 +345,13 @@ public class Session extends Node<IPongGame> implements ISession {
         return null;
     }
 
+    /**
+     * Notifies the server that this player wants to challenge another player.
+     *
+     * @param _opponent the player to be challenged.
+     * @return -1 if the player could not be challenged and 1 if the player was
+     * challenged successfully.
+     */
     public int challengePlayer(ISession _opponent) {
         gameInterrupted = false;
         challengeMode = true;
@@ -368,6 +380,15 @@ public class Session extends Node<IPongGame> implements ISession {
         return -1;
     }
 
+    /**
+     * This method is called when the player gets challenged by another player.
+     * It shows a dialog where the user can either accept or decline the
+     * challenge. Also notifies the server when the user accepts the challenge.
+     *
+     * @param _opponent the opponent that is challenging this user.
+     * @return the result of the dialog (0=accepted, -1=declined)
+     * @throws java.rmi.RemoteException if the server can not be notified.
+     */
     @Override
     public int recieveChallengeRequest(ISession _opponent) throws RemoteException {
         if (lobbyPanel.spawnChallengeRequest() == 0) {
@@ -377,8 +398,9 @@ public class Session extends Node<IPongGame> implements ISession {
             challengeMode = true;
             ISession[] _players = {this, _opponent};
             server.onMessage("acceptChallenge", _players);
+            return 0;
         }
-        return 0;
+        return -1;
     }
 
     @Override

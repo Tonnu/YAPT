@@ -12,6 +12,8 @@ import java.net.MalformedURLException;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -23,6 +25,8 @@ import javax.swing.DefaultListModel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import yapt.GAME.Session;
+import yapt.RMI.ILobby;
+import static yapt.RMI.INode.RMI_PORT;
 import yapt.RMI.IPongGame;
 import yapt.RMI.ISession;
 import yapt.RMI.IYAPTServer;
@@ -42,6 +46,7 @@ public class LobbyPanel extends javax.swing.JPanel {
     private JPanel cards;
     private List<ISession> onlinePlayers;
     private DefaultListModel players, pongGames;
+    private ILobby lobby;
 
     /**
      * Creates new form LobbyPanel
@@ -127,10 +132,10 @@ public class LobbyPanel extends javax.swing.JPanel {
         //when trying to find a game, try to connect to server first
 
         //register clientStub at remote server
-        //Registry remoteRegistry = LocateRegistry.getRegistry(serverAddress, RMI_PORT);
-        server = (IYAPTServer) Naming.lookup(IYAPTServer.class.getSimpleName());
-        //server = (IYAPTServer) remoteRegistry.lookup(IYAPTServer.class.getSimpleName());
-        //lobby = (ILobby) remoteRegistry.lookup(ILobby.class.getSimpleName());
+        Registry remoteRegistry = LocateRegistry.getRegistry(serverAddress, RMI_PORT);
+        //server = (IYAPTServer) Naming.lookup("188.226.136.184/rmi/YAPT_RMI/build/classes/yapt/RMI/" + IYAPTServer.class.getSimpleName());
+        server = (IYAPTServer) remoteRegistry.lookup(IYAPTServer.class.getSimpleName());
+        lobby = (ILobby) remoteRegistry.lookup(ILobby.class.getSimpleName());
         //create RMI-stub for a ClientImpl
         //lobby = (ILobby) Naming.lookup(ILobby.class.getSimpleName());
 

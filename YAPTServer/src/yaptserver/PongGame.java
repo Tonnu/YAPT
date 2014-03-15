@@ -5,14 +5,11 @@
  */
 package yaptserver;
 
-import java.awt.List;
 import java.io.Serializable;
 import java.rmi.RemoteException;
 import java.util.Iterator;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import yapt.RMI.IPong;
 import yapt.RMI.IPongGame;
 import yapt.RMI.ISession;
@@ -35,8 +32,8 @@ public class PongGame extends Node<ISession> implements IPongGame, Serializable 
 
     /**
      * *
-     * Manages a game between two users. Specifically, it holds the pong
-     * object, both player positions and calculates collisions.
+     * Manages a game between two users. Specifically, it holds the pong object,
+     * both player positions and calculates collisions.
      *
      * @param server the server to communicate with.
      * @param A The first player's session.
@@ -174,12 +171,16 @@ public class PongGame extends Node<ISession> implements IPongGame, Serializable 
             }
 
             if (leftScore == 5 || rightScore == 5) {
+                for (Iterator it = this.getOthers().iterator(); it.hasNext();) {
+                    Object object = it.next();
+                    ISession _s = (ISession) object;
+                    _s.onMessage("serverDisconnect", null);
+                    this.unRegister(_s);
+                }
                 server.onMessage("gameStopped", this);
-                this.unRegister(playerA);
-                this.unRegister(playerB);
                 stop();
             }
-        } 
+        }
     }
 
     @Override

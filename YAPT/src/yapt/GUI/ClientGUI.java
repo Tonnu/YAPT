@@ -39,8 +39,8 @@ public class ClientGUI {
     private static ISession SESSION;
 
     public static void main(String args[]) {
-        final String serverAddress = (args.length < 1) ? "localhost" : args[0];
-        //final String serverAddress = "localhost";
+        //final String serverAddress = (args.length < 1) ? "localhost" : args[0];
+        final String serverAddress = "localhost";
         //final String serverAddress = "188.226.136.184";
         final JFrame window = new JFrame();
         window.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
@@ -95,6 +95,7 @@ public class ClientGUI {
                     }
                 } catch (RemoteException | NotBoundException ex) {
                     control.setVisible(true);
+                    Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
                 } catch (MalformedURLException ex) {
                     Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
                 }

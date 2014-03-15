@@ -7,7 +7,6 @@ package yapt.GUI;
 
 import java.awt.CardLayout;
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Graphics;
 import java.awt.Rectangle;
 import java.awt.event.KeyEvent;
@@ -15,21 +14,15 @@ import java.net.MalformedURLException;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
-import java.rmi.server.UnicastRemoteObject;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import yapt.GAME.KeyListener;
 import yapt.GAME.Session;
 import yapt.RMI.ILobby;
-import static yapt.RMI.INode.RMI_PORT;
 import yapt.RMI.IPongGame;
-import yapt.RMI.ISession;
 import yapt.RMI.IYAPTServer;
 
 /**

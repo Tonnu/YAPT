@@ -121,7 +121,8 @@ public class Pong implements IPong, Serializable {
 
         } else if (rectangle.intersects(bottomBound) || rectangle.intersects(topBound)) {
             goingStraight = false;
-            angle = random.nextInt(5);
+            //angle = random.nextInt(5);
+            angle = 3;
             goingup = location.y > 0 || location.y <= 15;
         }
     }
