@@ -7,8 +7,6 @@ package yapt.GAME;
 
 import java.awt.Graphics;
 import java.awt.Rectangle;
-import java.net.MalformedURLException;
-import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;

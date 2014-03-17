@@ -12,6 +12,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
@@ -97,6 +98,8 @@ public class ClientGUI {
                     control.setVisible(true);
                     Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
                 } catch (MalformedURLException ex) {
+                    Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
+                } catch (IOException ex) {
                     Logger.getLogger(ClientGUI.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }

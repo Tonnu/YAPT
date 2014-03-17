@@ -6,6 +6,7 @@
 package yapt.RMI;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.rmi.server.RMISocketFactory;
@@ -14,7 +15,7 @@ import java.rmi.server.RMISocketFactory;
  *
  * @author Toon
  */
-public class StaticPortRMISocketFactory extends RMISocketFactory {
+public class StaticPortRMISocketFactory extends RMISocketFactory implements Serializable{
 
     @Override
     public Socket createSocket(String host, int port) throws IOException {

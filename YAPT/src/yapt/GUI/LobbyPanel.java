@@ -128,7 +128,7 @@ public class LobbyPanel extends javax.swing.JPanel {
         this.username = username;
         this.gamePanel = gamepanel;
         this.cards = cards;
-        RMISocketFactory.setSocketFactory(new StaticPortRMISocketFactory());
+        //RMISocketFactory.setSocketFactory(new StaticPortRMISocketFactory());
 
         //unwise
         System.setSecurityManager(null);
@@ -155,9 +155,9 @@ public class LobbyPanel extends javax.swing.JPanel {
             }
         }
         sessionImpl = new Session(username, server, gamepanel, this);
-        final ISession sessionStub = (ISession) UnicastRemoteObject.exportObject(sessionImpl, 80);
+        final ISession sessionStub = (ISession) UnicastRemoteObject.exportObject(sessionImpl, 1099);
 
-        server.register(null);
+        server.register(sessionStub);
 
         //start pushing messages to the server
         server.onMessage("Connected", sessionImpl);

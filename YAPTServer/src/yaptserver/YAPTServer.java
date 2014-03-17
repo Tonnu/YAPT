@@ -11,6 +11,7 @@ import yapt.RMI.IPongGame;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.rmi.server.RMISocketFactory;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -24,6 +25,7 @@ import yapt.RMI.ILobby;
 import yapt.RMI.ISession;
 import yapt.RMI.IYAPTServer;
 import yapt.RMI.Node;
+import yapt.RMI.StaticPortRMISocketFactory;
 
 /**
  *
@@ -194,6 +196,7 @@ public class YAPTServer extends Node<ISession> implements IYAPTServer {
         //unwise
         System.setSecurityManager(null);
         try {
+            RMISocketFactory.setSocketFactory(new StaticPortRMISocketFactory());
             final Lobby lobby = new Lobby();
             final ILobby lobbyStub = (ILobby) UnicastRemoteObject.exportObject(lobby, 1388);
             final YAPTServer server = new YAPTServer(lobby);
