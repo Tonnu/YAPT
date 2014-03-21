@@ -17,8 +17,14 @@ public interface IPlayer {
     public void update(int direction);
 
     public void draw(Graphics g);
-    
+
     public IBat getBat();
-    
+
     public void setBatCoordinates(Vector2f _position);
+
+    public int getScore();
+
+    public void setScore(int score);
+
+    public void score();
 }

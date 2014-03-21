@@ -21,7 +21,7 @@ public class Bat implements IBat, Serializable {
     private Vector2f location;
     private final double velocity = 15;
     //private IPlayer owner;
-    private final int width = 10, height = 20;
+    private final int width = 10, height = 60;
     private final Rectangle batRectangle;
 
     public Bat(Vector2f location) {
@@ -47,7 +47,7 @@ public class Bat implements IBat, Serializable {
         Graphics2D g2d = (Graphics2D) g;
         Rectangle rect = new Rectangle((int) location.getX(), (int) location.getY(), this.width, this.height);
         g2d.draw(rect);
-        g2d.setColor(Color.red);
+        g2d.setColor(Color.white);
         g2d.fill(rect);
     }
 

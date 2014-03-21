@@ -27,12 +27,13 @@ public abstract class Node<T extends INode> implements INode<T> {
 
     @Override
     public void unRegister(T other) throws RemoteException {
-        others.remove(other);
+        if (others.contains(other)) {
+            others.remove(other);
+        }
     }
 
     @Override
     public void onMessage(String message) {
-        Logger.getLogger(this.getClass().getSimpleName()).log(Level.INFO, "received: {0}", message);
     }
 
     public void onMessage(String message, Object o) throws RemoteException {
@@ -43,10 +44,17 @@ public abstract class Node<T extends INode> implements INode<T> {
     @Override
     public void notifyAll(String message, Object o) throws RemoteException {
         for (T other : others) {
-            if(o != null)
+            if (o != null) {
                 other.onMessage(message, o);
-            else other.onMessage(message);
+            } else {
+                other.onMessage(message);
+            }
         }
+    }
+
+    @Override
+    public Collection getOthers() {
+        return others;
     }
 
 }

@@ -16,17 +16,12 @@ import yapt.RMI.Vector2f;
  * @author Toon
  */
 public interface IGameClient {
-
-    public void updateGameObjects(Collections c) throws RemoteException;
-
     public IPlayer getPlayer() throws RemoteException;
 
     public void update(int direction) throws RemoteException;
 
     public void draw(Graphics g) throws RemoteException;
-    
-    public void setPong(IPong _pong);
-    
+        
     public void setOpponent(IPlayer _opponent);
     
     public IPlayer getOpponent();

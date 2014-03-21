@@ -23,9 +23,26 @@ public class Player implements IPlayer, Serializable {
     private final String name;
     private ISession owningSession;
     private Bat bat;
+    private int score;
+
+    @Override
+    public int getScore() {
+        return score;
+    }
+
+    @Override
+    public void score() {
+        this.score++;
+    }
+
+    @Override
+    public void setScore(int score) {
+        this.score = score;
+    }
 
     public Player(String name, ISession session) {
         this.name = name;
+        this.score = 0;
         this.owningSession = session;
         this.bat = new Bat(new Vector2f(10, 10));
     }
@@ -40,7 +57,8 @@ public class Player implements IPlayer, Serializable {
         }
     }
 
-    public void draw(Graphics g){
+    @Override
+    public void draw(Graphics g) {
         this.bat.draw(g);
     }
 
@@ -53,5 +71,5 @@ public class Player implements IPlayer, Serializable {
     public void setBatCoordinates(Vector2f _position) {
         this.bat.setPosition(_position);
     }
- 
+
 }

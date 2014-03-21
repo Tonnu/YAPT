@@ -7,9 +7,21 @@ package yapt.GAME;
 
 import java.awt.Graphics;
 import java.awt.Rectangle;
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import yapt.GUI.ClientGUI;
+import yapt.GUI.LobbyPanel;
+import yapt.GUI.YAPTPanel;
+import yapt.RMI.ILobby;
+import static yapt.RMI.INode.RMI_PORT;
 import yapt.RMI.IPongGame;
 import yapt.RMI.ISession;
 import yapt.RMI.IYAPTServer;
@@ -28,21 +40,52 @@ public class Session extends Node<IPongGame> implements ISession {
     private IYAPTServer server;
     private IPongGame pongGame;
     private int playerNumber, pongGameNumber = 0;
+    private YAPTPanel gamePanel;
+    private LobbyPanel lobbyPanel;
+    private String username;
+    private ILobby lobby;
+    private boolean challengeMode;
+    private boolean isSpectating = false;
+
+    public void setIsSpectating(boolean isSpectating) {
+        this.isSpectating = isSpectating;
+    }
+
+    @Override
+    public boolean isSpectating() {
+        return isSpectating;
+    }
 
     /**
      * *
      * Session manages a game between two players. It registers when the game
-     * starts, ends or when a player leaves. It receives updates from the server
-     * through RMI. It updates the YAPTClient with player and bat positions.
+     * lookingForGames, ends or when a player leaves. It receives updates from
+     * the server through RMI. It updates the YAPTClient with player and bat
+     * positions.
      *
      * @param server
      * @throws java.rmi.RemoteException
      */
-    public Session(IYAPTServer server) throws RemoteException {
-        this.pongGameNumber++;
-        this.server = server;
-        lookingForGame = false;
-        game = new GameClient(this);
+    public Session(String username, IYAPTServer server, YAPTPanel gamepanel, LobbyPanel lobbyPanel) throws RemoteException {
+        try {
+            this.pongGameNumber++;
+            this.server = server;
+            lookingForGame = false;
+            this.gamePanel = gamepanel;
+            this.lobbyPanel = lobbyPanel;
+            this.username = username;
+            Registry remoteRegistry = LocateRegistry.getRegistry(ClientGUI.IP_ADDRESS, RMI_PORT);
+            this.lobby = lobby = (ILobby)remoteRegistry.lookup(ILobby.class.getSimpleName());
+            this.isSpectating = false;
+        } catch (NotBoundException ex) {
+            Logger.getLogger(Session.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+    }
+
+    @Override
+    public String getUsername() {
+        return username;
     }
 
     public GameClient getGameClient() {
@@ -83,6 +126,11 @@ public class Session extends Node<IPongGame> implements ISession {
         }
     }
 
+    /**
+     * Calls the GameClient's draw() method.
+     *
+     * @param g
+     */
     public void draw(Graphics g) {
         try {
             this.game.draw(g);
@@ -91,6 +139,11 @@ public class Session extends Node<IPongGame> implements ISession {
         }
     }
 
+    /**
+     * Calls the GameClient's update() method.
+     *
+     * @param direction the direction in which the bat is moving (1=UP, -1=DOWN)
+     */
     public void update(int direction) {
         try {
             this.game.update(direction);
@@ -103,38 +156,82 @@ public class Session extends Node<IPongGame> implements ISession {
     public void onMessage(String message, Object o) throws RemoteException {
         super.onMessage(message);
         switch (message) {
+            case "spectating":
+
+                pongGame = (IPongGame) o;
+                pongGame.register(this);
+
+                game = new GameClient(this, pongGame.getPlayerA(), pongGame.getPlayerB());
+
+                System.out.println("got spectating!");
+                this.isSpectating = true;
+                this.gameStarted = true;
+                this.gameInterrupted = false;
+                this.lookingForGame = false;
+
+                break;
+            case "scoreUpdate":
+                if ((int) o == 1) {
+                    this.getGameClient().getPlayer().score();
+                } else {
+                    this.getGameClient().getOpponent().score();
+                }
+                break;
+            case "getPlayerList":
+                lobbyPanel.setOnlinePlayers((Collection<ISession>) o);
+                break;
+            case "getGameList":
+                List<String> gameStringList = new ArrayList<String>();
+                List<IPongGame> gameList = (List<IPongGame>) o;
+                for (IPongGame game : gameList) {
+                    gameStringList.add(game.getGameDetails());
+                }
+                lobbyPanel.setGameList(gameStringList);
+                break;
+            case "GetPublicChatMessage":
+                String chatMessage = (String) o;
+                lobbyPanel.newMessage(chatMessage);
+                break;
+            case "GetGameChatMessage":
+                chatMessage = (String) o;
+                gamePanel.newMessage(chatMessage);
+                break;
+            case "SendPublicChatMessage":
+                lobby.onMessage("PublicChatMessage", (String) o);
+                break;
+            case "SendGameChatMessage":
+                pongGame.onMessage("GameChatMessage", (String) o);
+                break;
             case "pongUpdate":
                 Vector2f _tempcoords = (Vector2f) o;
-                this.game.setPongCoordinates(_tempcoords); //needed for drawing
+                if (this.game != null) {
+                    this.game.setPongCoordinates(_tempcoords); //needed for drawing
+                }
                 break;
             case "pushBatUpdate":
-                if (!gameInterrupted) {
+                if (!gameInterrupted || pongGame == null) {
                     //my bat moved, notify server
                     System.out.println("pushing batupdate to server");
-                    //server.onMessage(message, this.game.getPlayer().getBat());
-                    //server.onMessage("pushSessionUpdate", this); //push new sessionstate to server
                     pongGame.onMessage("pushSessionUpdate", this); //push new sessionstate to server
                 }
                 break;
             case "getSessionUpdate":
                 //opponent's session updated
                 //set opponent's bat for drawing purposes
-                System.out.println("recieved opponent sessionupdate from server");
                 if (!gameInterrupted) {
-                    //ISession _opponent = (ISession) o;
                     Vector2f _opponentPosition = (Vector2f) o;
-                    //verify the opponent is in the same game as we are, and he also has the other player number
-                    //if (_opponent.getPlayerNumber() != this.getPlayerNumber() && this.pongGameNumber == _opponent.getGamePongNumber()) {
-                    //TODO 
-                    //not needed to send the whole bat object, let alone player. Only needed for drawing so send coordinates only.
-                    // if (this.game.getOpponent() == null) {
-                    //   System.out.println("this.game.getOpponent() equals null");
-//                            this.game.getOpponent().setBatCoordinates(new Vector2f(0, 0)); //needed for drawing 
-                    // } else {
-                    //      System.out.println("Opponent does not equal null");
                     this.game.getOpponent().setBatCoordinates(_opponentPosition); //needed for drawing 
-                    //}
-                    //}
+                }
+                break;
+            case "spectatorUpdate":
+                if (isSpectating && !gameInterrupted) {
+                    ISession[] _players = (ISession[]) o;
+                    if (_players != null) {
+                        this.game.getPlayer().setBatCoordinates(_players[0].getPlayerPosition());
+                        this.game.getOpponent().setBatCoordinates(_players[1].getPlayerPosition());
+                        this.game.getPlayer().setScore(this.pongGame.getPlayerScores()[0]);
+                        this.game.getOpponent().setScore(this.pongGame.getPlayerScores()[1]);
+                    }
                 }
                 break;
             case "getPongGameNumber":
@@ -151,19 +248,19 @@ public class Session extends Node<IPongGame> implements ISession {
                 }
                 break;
             case "gameFound":
+                game = new GameClient(this, false);
                 gameStarted = true;
                 lookingForGame = false;
                 gameInterrupted = false;
                 ISession _temp = (ISession) o;
 
                 this.game.setOpponent(new Player("Other", _temp)); //needed for drawing
-                //this.game.setOpponent((IPlayer) _temp.getGameClient().getPlayer());
                 if (this.getPlayerNumber() == 1) {
                     //spawn at the left side
-                    this.game.getPlayer().setBatCoordinates(new Vector2f(10, 150));
+                    this.game.getPlayer().setBatCoordinates(new Vector2f(0, 150));
                 } else {
                     //spawn at right side
-                    this.game.getPlayer().setBatCoordinates(new Vector2f(750, 150));
+                    this.game.getPlayer().setBatCoordinates(new Vector2f((float) ((float) this.gamePanel.getWidth() - this.game.getPlayer().getBat().getRectangle().getWidth()), 150));
                 }
 
                 break;
@@ -178,19 +275,34 @@ public class Session extends Node<IPongGame> implements ISession {
                 break;
             case "pushDisconnect":
                 pongGame.onMessage("gameDisconnect", this);
+                break;
+            case "cancelChallengeRequest":
                 lookingForGame = false;
                 gameInterrupted = true;
                 gameStarted = false;
                 break;
             case "serverDisconnect":
+                this.pongGame = null;
                 gameStarted = false;
+                isSpectating = false;
                 gameInterrupted = true;
                 lookingForGame = false;
                 game.resetPlayer();
+                lobbyPanel.showPanel();
                 break;
             default:
                 System.out.println("Session didn't recognize: " + message);
         }
+    }
+
+    @Override
+    public boolean isGameStarted() {
+        return gameStarted;
+    }
+
+    @Override
+    public IPongGame getPongGame() {
+        return pongGame;
     }
 
     @Override
@@ -217,4 +329,88 @@ public class Session extends Node<IPongGame> implements ISession {
     public int getGamePongNumber() {
         return this.pongGameNumber;
     }
+
+    @Override
+    public Rectangle getClientRectangle() throws RemoteException {
+        return this.gamePanel.getGameField();
+
+    }
+
+    public ISession getplayers(String _username) throws RemoteException {
+        for (Iterator it = this.lobby.getOthers().iterator(); it.hasNext();) {
+            ISession s = (ISession) it.next();
+            if (s.getUsername().equals(_username)) {
+                return s;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Notifies the server that this player wants to challenge another player.
+     *
+     * @param _opponent the player to be challenged.
+     * @return -1 if the player could not be challenged and 1 if the player was
+     * challenged successfully.
+     */
+    public int challengePlayer(ISession _opponent) {
+        gameInterrupted = false;
+        challengeMode = true;
+        try {
+            if (_opponent.isGameStarted()) {
+                return -1;
+            } else {
+                game = new GameClient(this, true);
+
+                if (!lookingForGame) {
+                    if (this.lobby.getOthers().contains(_opponent)) {
+                        lookingForGame = false;
+                        gameStarted = true;
+                        ISession[] _players = {this, _opponent};
+                        server.onMessage("newGameWithOpponent", _players);
+                        return 1;
+                    } else {
+                        System.out.println("Opponent not found!");
+                        return -1;
+                    }
+                }
+            }
+        } catch (RemoteException ex) {
+            Logger.getLogger(Session.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return -1;
+    }
+
+    /**
+     * This method is called when the player gets challenged by another player.
+     * It shows a dialog where the user can either accept or decline the
+     * challenge. Also notifies the server when the user accepts the challenge.
+     *
+     * @param _opponent the opponent that is challenging this user.
+     * @return the result of the dialog (0=accepted, -1=declined)
+     * @throws java.rmi.RemoteException if the server can not be notified.
+     */
+    @Override
+    public int recieveChallengeRequest(ISession _opponent) throws RemoteException {
+        if (lobbyPanel.spawnChallengeRequest() == 0) {
+            game = new GameClient(this, true);
+            lookingForGame = false;
+            gameInterrupted = false;
+            challengeMode = true;
+            ISession[] _players = {this, _opponent};
+            server.onMessage("acceptChallenge", _players);
+            return 0;
+        }
+        return -1;
+    }
+
+    @Override
+    public boolean getChallengeMode() {
+        return challengeMode;
+    }
+
+    public void setChallengeMode(boolean challengeMode) {
+        this.challengeMode = challengeMode;
+    }
+
 }
