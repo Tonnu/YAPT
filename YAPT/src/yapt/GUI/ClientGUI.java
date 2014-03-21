@@ -38,11 +38,12 @@ public class ClientGUI {
     public static String USERNAME;
     private IYAPTServer server;
     private static ISession SESSION;
+    public static String IP_ADDRESS = "localhost";
 
     public static void main(String args[]) {
         //final String serverAddress = (args.length < 1) ? "localhost" : args[0];
-        //final String serverAddress = "localhost";
-        final String serverAddress = "188.226.136.184";
+        final String serverAddress = "localhost";
+        //final String serverAddress = "188.226.136.184";
         final JFrame window = new JFrame();
         window.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         window.addWindowListener(new WindowAdapter() {

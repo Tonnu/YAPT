@@ -155,7 +155,7 @@ public class LobbyPanel extends javax.swing.JPanel {
             }
         }
         sessionImpl = new Session(username, server, gamepanel, this);
-        final ISession sessionStub = (ISession) UnicastRemoteObject.exportObject(sessionImpl, 1099);
+        final ISession sessionStub = (ISession) UnicastRemoteObject.exportObject(sessionImpl, 0);
 
         server.register(sessionStub);
 

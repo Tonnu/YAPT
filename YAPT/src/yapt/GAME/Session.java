@@ -17,6 +17,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import yapt.GUI.ClientGUI;
 import yapt.GUI.LobbyPanel;
 import yapt.GUI.YAPTPanel;
 import yapt.RMI.ILobby;
@@ -73,7 +74,7 @@ public class Session extends Node<IPongGame> implements ISession {
             this.gamePanel = gamepanel;
             this.lobbyPanel = lobbyPanel;
             this.username = username;
-            Registry remoteRegistry = LocateRegistry.getRegistry("188.226.136.184", RMI_PORT);
+            Registry remoteRegistry = LocateRegistry.getRegistry(ClientGUI.IP_ADDRESS, RMI_PORT);
             this.lobby = lobby = (ILobby)remoteRegistry.lookup(ILobby.class.getSimpleName());
             this.isSpectating = false;
         } catch (NotBoundException ex) {
